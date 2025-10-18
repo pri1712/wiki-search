@@ -1,0 +1,9 @@
+- [ ] plan components 
+- [ ] code components
+	- [ ] parsing
+	- [ ] tokenization
+	- [ ] indexing
+	- [ ] ranking/information retrieval
+	- [ ] querying
+	- [ ] UI
+- [ ] 
