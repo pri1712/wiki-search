@@ -10,7 +10,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>WikiParser</module>
+        <module>wiki-parser</module>
+        <module>wiki-utils</module>
     </modules>
 
     <properties>

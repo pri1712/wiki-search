@@ -1,6 +1,8 @@
 package com.pri1712.searchengine.wikiparser;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.events.XMLEvent;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,8 +31,34 @@ public class Parser {
         BZip2CompressorInputStream compressedInputStream = new BZip2CompressorInputStream(bis);
         XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLEventReader xmlEventReader = factory.createXMLEventReader(compressedInputStream);
+        String title;
+        StringBuilder text = new StringBuilder();
+        String currentTag = "";
+        String timestamp;
+        String ID;
         while (xmlEventReader.hasNext()) {
+            XMLEvent nextEvent = xmlEventReader.nextEvent();
+            if (nextEvent.isStartDocument()) {
+                LOGGER.log(Level.INFO, "Start document");
+            } else if (nextEvent.isStartElement()) {
+                currentTag = nextEvent.asStartElement().getName().getLocalPart();
+            } else if (nextEvent.isCharacters()) {
+                String data = nextEvent.asCharacters().getData();
+                if (currentTag.equals("title")) {
+                    title = data;
+                } else if (currentTag.equals("text")) {
+                    text.append(data);
+                } else if (currentTag.equals("timestamp")) {
+                    timestamp = data;
+                } else if (currentTag.equals("id")) {
+                    ID = data;
+                }
+            } else if (nextEvent.isEndElement()) {
+                String endTag = nextEvent.asEndElement().getName().getLocalPart();
+                if (endTag.equals("page")) {
 
+                }
+            }
         }
 
 
