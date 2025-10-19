@@ -1,0 +1,37 @@
+import javax.xml.stream.XMLInputFactory;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.logging.*;
+
+public class Parser {
+    private String XmlFilePath;
+    private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
+    private FileInputStream fis;
+    public Parser(String XmlFilePath) {
+        this.XmlFilePath = XmlFilePath;
+    }
+
+    public void parseData() throws Exception {
+        if (XmlFilePath.isEmpty()) {
+            throw new Exception("XML file path is empty");
+        }
+        try {
+            fis = new FileInputStream(XmlFilePath);
+        } catch (FileNotFoundException e) {
+            LOGGER.log(Level.WARNING, "File not found: " + XmlFilePath, e);
+        }
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+
+
+    }
+
+    public String getXmlFilePath() {
+        return XmlFilePath;
+    }
+
+    public void setXmlFilePath(String XmlFilepath) {
+        this.XmlFilePath = XmlFilepath;
+    }
+}
