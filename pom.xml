@@ -12,6 +12,7 @@
     <modules>
         <module>wiki-parser</module>
         <module>wiki-utils</module>
+        <module>wiki-searchApp</module>
     </modules>
 
     <properties>
