@@ -9,6 +9,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.logging.*;
 
+import com.pri1712.searchengine.wikiutils.NormalizeText;
+import com.pri1712.searchengine.wikiutils.WikiDocument;
+import com.pri1712.searchengine.wikiutils.NormalizeText.*;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import com.pri1712.searchengine.wikiutils.WikiDocument;
@@ -59,6 +62,8 @@ public class Parser {
             } else if (nextEvent.isEndElement()) {
                 String endTag = nextEvent.asEndElement().getName().getLocalPart();
                 if (endTag.equals("page")) {
+                    NormalizeText normalizeText = new NormalizeText();
+                    StringBuilder cleanText = normalizeText.cleanText(text);
                     WikiDocument wikiDocument = new WikiDocument(ID,title,text,timestamp);
                 }
             }
