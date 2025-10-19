@@ -1,8 +1,12 @@
+package com.pri1712.searchengine.wikiparser;
+import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.logging.*;
+
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 public class Parser {
     private String XmlFilePath;
@@ -22,7 +26,12 @@ public class Parser {
             LOGGER.log(Level.WARNING, "File not found: " + XmlFilePath, e);
         }
         BufferedInputStream bis = new BufferedInputStream(fis);
+        BZip2CompressorInputStream compressedInputStream = new BZip2CompressorInputStream(bis);
         XMLInputFactory factory = XMLInputFactory.newInstance();
+        XMLEventReader xmlEventReader = factory.createXMLEventReader(compressedInputStream);
+        while (xmlEventReader.hasNext()) {
+
+        }
 
 
     }
