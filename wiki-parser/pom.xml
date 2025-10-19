@@ -17,5 +17,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.pri1712.search-engine</groupId>
+            <artifactId>wiki-utils</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

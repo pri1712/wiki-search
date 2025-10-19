@@ -1,4 +1,5 @@
 package com.pri1712.searchengine.wikiparser;
+
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -9,6 +10,8 @@ import java.io.FileNotFoundException;
 import java.util.logging.*;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+
+import com.pri1712.searchengine.wikiutils.WikiDocument;
 
 public class Parser {
     private String XmlFilePath;
@@ -31,11 +34,11 @@ public class Parser {
         BZip2CompressorInputStream compressedInputStream = new BZip2CompressorInputStream(bis);
         XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLEventReader xmlEventReader = factory.createXMLEventReader(compressedInputStream);
-        String title;
+        String title = "";
         StringBuilder text = new StringBuilder();
         String currentTag = "";
-        String timestamp;
-        String ID;
+        String timestamp = "";
+        String ID = "";
         while (xmlEventReader.hasNext()) {
             XMLEvent nextEvent = xmlEventReader.nextEvent();
             if (nextEvent.isStartDocument()) {
@@ -56,7 +59,7 @@ public class Parser {
             } else if (nextEvent.isEndElement()) {
                 String endTag = nextEvent.asEndElement().getName().getLocalPart();
                 if (endTag.equals("page")) {
-
+                    WikiDocument wikiDocument = new WikiDocument(ID,title,text,timestamp);
                 }
             }
         }
