@@ -13,10 +13,13 @@ public class WikiDocument {
         this.title = title;
         this.text = text;
         this.timestamp = timestamp;
-        LOGGER.log(Level.INFO, "WikiDocument created with title: {0}", title);
-        LOGGER.log(Level.INFO, "WikiDocument created with text: {0}", text);
-        LOGGER.log(Level.INFO, "WikiDocument created with timestamp: {0}", timestamp);
-        LOGGER.log(Level.INFO, "WikiDocument created with id: {0}", id);
+        LOGGER.info(String.format(
+                "Parsed Page -> ID: %s | Title: %s | Text length: %d | Timestamp: %s",
+                id,
+                title,
+                text.length(),
+                timestamp
+        ));
     }
 
     public String getTimestamp() {
