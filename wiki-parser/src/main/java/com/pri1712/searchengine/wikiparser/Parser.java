@@ -112,10 +112,10 @@ public class Parser {
                                 StringBuilder cleanText = normalizeText.cleanText(textBuilder);
                                 StringBuilder cleanTitle = normalizeText.cleanText(titleBuilder);
                                 //normalize and clean up title and text.
-//                                LOGGER.log(Level.INFO,"Clean text length: {0}", cleanText.length());
+//                              LOGGER.log(Level.INFO,"Clean text length: {0}", cleanText.length());
                                 if (cleanText.isEmpty()) {
                                     LOGGER.log(Level.WARNING,"Clean text is empty for title: {0)", cleanTitle.toString());
-                                    continue;
+                                    break;
                                 }
                                 WikiDocument wikiDocument = new WikiDocument(ID.trim(),cleanTitle.toString().trim(),cleanText.toString(),timestamp.trim());
 
