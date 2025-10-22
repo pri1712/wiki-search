@@ -1,13 +1,16 @@
 package com.pri1712.searchengine.wikiutils;
 
+import java.util.ArrayList;
 import java.util.logging.*;
 
 public class WikiDocument {
+    private static final Logger LOGGER = Logger.getLogger(WikiDocument.class.getName());
+
     private String id;
     private String title;
     private String text;
     private String timestamp;
-    private static final Logger LOGGER = Logger.getLogger(WikiDocument.class.getName());
+
     public WikiDocument(String id, String title, String text, String timestamp) {
         this.id = id;
         this.title = title;

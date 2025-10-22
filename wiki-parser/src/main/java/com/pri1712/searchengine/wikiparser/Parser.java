@@ -5,24 +5,34 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.*;
 
 import com.pri1712.searchengine.wikiutils.NormalizeText;
 import com.pri1712.searchengine.wikiutils.WikiDocument;
-import com.pri1712.searchengine.wikiutils.NormalizeText.*;
+import com.pri1712.searchengine.wikiutils.BatchFileWriter;
+
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
-import com.pri1712.searchengine.wikiutils.WikiDocument;
 
 public class Parser {
-    private String XmlFilePath;
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
+
+    private static final int MAX_BATCH_SIZE = 1000;
+
+    private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
+    private int batchCounter = 0;
+
+    private ArrayList<WikiDocument> writeBuffer = new ArrayList<>();
+
+    private BatchFileWriter batchFileWriter = new BatchFileWriter("parsed-data/");
 
     public Parser(String XmlFilePath) {
         this.XmlFilePath = XmlFilePath;
@@ -118,7 +128,15 @@ public class Parser {
                                     break;
                                 }
                                 WikiDocument wikiDocument = new WikiDocument(ID.trim(),cleanTitle.toString().trim(),cleanText.toString(),timestamp.trim());
-
+                                writeBuffer.add(wikiDocument);
+                                if (writeBuffer.size() >=  MAX_BATCH_SIZE) {
+                                    //10k docs in the write buffer, need to write it to a file on disk.
+                                    //check if this is blocking or non blocking.
+                                    ArrayList<WikiDocument> newWriteBuffer = new ArrayList<>(writeBuffer);
+                                    writeBuffer.clear();
+                                    batchFileWriter.WriteBatch(newWriteBuffer,batchCounter);
+                                    batchCounter++;
+                                }
                                 //clean up modified data.
                                 titleBuilder.setLength(0);
                                 textBuilder.setLength(0);
@@ -126,7 +144,7 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 500000) {
+                                if (docCounter > 5000) {
                                     return;
                                 }
                         }
