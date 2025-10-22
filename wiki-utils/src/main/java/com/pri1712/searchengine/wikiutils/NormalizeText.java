@@ -14,7 +14,7 @@ public class NormalizeText {
         }
         String rawText = text.toString().trim();
         if ((rawText.matches("(?is)^#redirect\\s*\\[\\[.*?\\]\\]")) || rawText.matches("(?is)^#REDIRECT\\s*\\[\\[.*?\\]\\]")) {
-            LOGGER.log(Level.INFO,"Clean text: {0}", rawText);
+//            LOGGER.log(Level.INFO,"Clean text: {0}", rawText);
             return new StringBuilder();
         }
         String lowercaseText = rawText.toLowerCase();

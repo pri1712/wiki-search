@@ -1,0 +1,48 @@
+package com.pri1712.searchengine.wikiparser;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
+
+import com.pri1712.searchengine.wikiutils.WikiDocument;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class BatchFileWriter {
+    private static final Logger LOGGER = Logger.getLogger(BatchFileWriter.class.getName());
+
+    private String outputDir;
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    public  BatchFileWriter(String outputDir) throws IllegalArgumentException {
+        if (outputDir==null || outputDir.trim().isEmpty()) {
+            throw new IllegalArgumentException("outputDir is null or empty");
+        }
+        if(outputDir.endsWith("/")) {
+            this.outputDir=outputDir;
+        } else {
+            this.outputDir=outputDir+"/";
+        }
+        new File(this.outputDir).mkdirs();
+    }
+
+    public void WriteBatch(ArrayList<WikiDocument> batch, int batchCount) {
+        String outputFile = String.format("%sbatch_%05d.json.gz", outputDir, batchCount);
+        try {
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            GZIPOutputStream gos = new GZIPOutputStream(fos);
+            mapper.writeValue(gos, batch);
+            LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount+1, outputFile));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write batch to file "+outputFile,e);
+        }
+        Runtime rt = Runtime.getRuntime();
+        long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+        LOGGER.info(String.format("Heap used: %d MB", used));
+
+    }
+}
