@@ -114,7 +114,7 @@ public class Parser {
                                 //normalize and clean up title and text.
 //                              LOGGER.log(Level.INFO,"Clean text length: {0}", cleanText.length());
                                 if (cleanText.isEmpty()) {
-                                    LOGGER.log(Level.WARNING,"Clean text is empty for title: {0)", cleanTitle.toString());
+//                                    LOGGER.log(Level.WARNING,"Clean text is empty for title: {0)", cleanTitle.toString());
                                     break;
                                 }
                                 WikiDocument wikiDocument = new WikiDocument(ID.trim(),cleanTitle.toString().trim(),cleanText.toString(),timestamp.trim());
@@ -126,8 +126,8 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter <= 5) {
-                                    LOGGER.log(Level.INFO, "Doc text: {0}", wikiDocument.getText());
+                                if (docCounter > 500000) {
+                                    return;
                                 }
                         }
                 }
