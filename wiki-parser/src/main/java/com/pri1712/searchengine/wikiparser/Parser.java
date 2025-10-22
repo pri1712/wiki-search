@@ -6,16 +6,13 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.logging.*;
 
 import com.pri1712.searchengine.wikiutils.NormalizeText;
 import com.pri1712.searchengine.wikiutils.WikiDocument;
-import com.pri1712.searchengine.wikiutils.BatchFileWriter;
+import com.pri1712.searchengine.wikiparser.BatchFileWriter;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
@@ -29,13 +26,17 @@ public class Parser {
     private FileInputStream fis;
     private int docCounter = 0;
     private int batchCounter = 0;
+    private int previousBatchCounter = 0;
+    private final String batchCheckpointFile = "batchCountCheckpoint.txt";
 
     private ArrayList<WikiDocument> writeBuffer = new ArrayList<>();
 
     private BatchFileWriter batchFileWriter = new BatchFileWriter("parsed-data/");
+    private CheckpointManager checkpointManager = new CheckpointManager(batchCheckpointFile);
 
     public Parser(String XmlFilePath) {
         this.XmlFilePath = XmlFilePath;
+        this.previousBatchCounter = checkpointManager.readCheckpointBatch();
     }
 
 
@@ -134,7 +135,11 @@ public class Parser {
                                     //check if this is blocking or non blocking.
                                     ArrayList<WikiDocument> newWriteBuffer = new ArrayList<>(writeBuffer);
                                     writeBuffer.clear();
-                                    batchFileWriter.WriteBatch(newWriteBuffer,batchCounter);
+                                    LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d",previousBatchCounter,batchCounter));
+                                    if (previousBatchCounter == -1 || batchCounter > previousBatchCounter) {
+                                        batchFileWriter.WriteBatch(newWriteBuffer,batchCounter);
+                                    }
+                                    checkpointManager.writeCheckpointBatch(batchCounter); //checkpoint it.
                                     batchCounter++;
                                 }
                                 //clean up modified data.
@@ -144,13 +149,13 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 500000) {
+                                if (docCounter > 50000) {
                                     return;
                                 }
                         }
                 }
             }
-        } catch (IOException | XMLStreamException e) {
+        } catch (IOException | RuntimeException | XMLStreamException e ) {
             throw new RuntimeException(e);
         }
     }
