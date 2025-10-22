@@ -38,10 +38,13 @@ public class BatchFileWriter {
             FileOutputStream fos = new FileOutputStream(outputFile);
             GZIPOutputStream gos = new GZIPOutputStream(fos);
             mapper.writeValue(gos, batch);
-            LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount, outputFile));
+            LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount+1, outputFile));
         } catch (IOException e) {
             throw new RuntimeException("Failed to write batch to file "+outputFile,e);
         }
+        Runtime rt = Runtime.getRuntime();
+        long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+        LOGGER.info(String.format("Heap used: %d MB", used));
 
     }
 }

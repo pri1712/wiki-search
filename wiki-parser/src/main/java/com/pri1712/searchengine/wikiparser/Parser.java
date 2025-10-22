@@ -23,7 +23,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
-    private static final int MAX_BATCH_SIZE = 1000;
+    private static final int MAX_BATCH_SIZE = 10000;
 
     private String XmlFilePath;
     private FileInputStream fis;
@@ -144,7 +144,7 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 5000) {
+                                if (docCounter > 500000) {
                                     return;
                                 }
                         }
