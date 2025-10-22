@@ -13,13 +13,13 @@ public class WikiDocument {
         this.title = title;
         this.text = text;
         this.timestamp = timestamp;
-        LOGGER.info(String.format(
-                "Parsed Page -> ID: %s | Title: %s | Text length: %d | Timestamp: %s",
-                id,
-                title,
-                text.length(),
-                timestamp
-        ));
+//        LOGGER.info(String.format(
+//                "Parsed Page -> ID: %s | Title: %s | Text length: %d | Timestamp: %s",
+//                id,
+//                title,
+//                text.length(),
+//                timestamp
+//        ));
     }
 
     public String getTimestamp() {
