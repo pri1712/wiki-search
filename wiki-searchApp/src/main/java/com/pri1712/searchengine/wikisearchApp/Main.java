@@ -24,7 +24,7 @@ public class Main {
             Tokenizer tokenizer = new Tokenizer();
             String parsedFilePath = "parsed-data";
             LOGGER.info("Parsing Wikipedia XML dump file: " + parsedFilePath);
-            tokenizer.TokenizeData(parsedFilePath);
+            tokenizer.tokenizeData(parsedFilePath);
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
