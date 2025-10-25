@@ -13,6 +13,7 @@
         <module>wiki-parser</module>
         <module>wiki-utils</module>
         <module>wiki-searchApp</module>
+        <module>wiki-tokenizer</module>
     </modules>
 
     <properties>
