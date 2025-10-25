@@ -1,7 +1,7 @@
 package com.pri1712.searchengine.wikisearchApp;
 
 import com.pri1712.searchengine.wikiparser.Parser;
-
+import com.pri1712.searchengine.wikitokenizer.Tokenizer;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +19,15 @@ public class Main {
             parser.parseData();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+        try {
+            Tokenizer tokenizer = new Tokenizer();
+            String parsedFilePath = "parsed-data";
+            LOGGER.info("Parsing Wikipedia XML dump file: " + parsedFilePath);
+            tokenizer.TokenizeData(parsedFilePath);
+
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.WARNING, e.getMessage());
         }
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;

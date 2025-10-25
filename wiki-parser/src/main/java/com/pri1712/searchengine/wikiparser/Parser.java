@@ -20,14 +20,14 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
-    private static final int MAX_BATCH_SIZE = 10000;
+    private static final int MAX_BATCH_SIZE = 100;
 
     private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
     private int batchCounter = 0;
     private int previousBatchCounter = 0;
-    private final String batchCheckpointFile = "batchCountCheckpoint.txt";
+    private final String batchCheckpointFile = "parserCheckpoint.txt";
 
     private ArrayList<WikiDocument> writeBuffer = new ArrayList<>();
 
@@ -149,7 +149,7 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 50000) {
+                                if (docCounter > 5000) {
                                     return;
                                 }
                         }
