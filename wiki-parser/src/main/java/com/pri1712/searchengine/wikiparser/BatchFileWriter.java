@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
@@ -30,7 +31,7 @@ public class BatchFileWriter {
         new File(this.outputDir).mkdirs();
     }
 
-    public void WriteBatch(ArrayList<WikiDocument> batch, int batchCount) {
+    public void WriteBatch(List<?> batch, int batchCount) {
         String outputFile = String.format("%sbatch_%05d.json.gz", outputDir, batchCount);
         try {
             FileOutputStream fos = new FileOutputStream(outputFile);

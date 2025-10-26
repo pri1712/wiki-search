@@ -8,11 +8,11 @@ import javax.xml.stream.events.XMLEvent;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.*;
 
 import com.pri1712.searchengine.wikiutils.NormalizeText;
 import com.pri1712.searchengine.wikiutils.WikiDocument;
-import com.pri1712.searchengine.wikiparser.BatchFileWriter;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
@@ -20,23 +20,23 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
-    private static final int MAX_BATCH_SIZE = 1;
+    private static final int MAX_BATCH_SIZE = 10;
 
     private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
-    private int batchCounter = 0;
-    private int previousBatchCounter = 0;
-    private final String batchCheckpointFile = "parserCheckpoint.txt";
+    private int parseBatchCounter = 0;
+    private int previousParseBatchCounter = 0;
+    private final String parserBatchCheckpointFile = "parserCheckpoint.txt";
 
-    private ArrayList<WikiDocument> writeBuffer = new ArrayList<>();
+    private final List<WikiDocument> writeBuffer = new ArrayList<>();
 
-    private BatchFileWriter batchFileWriter = new BatchFileWriter("parsed-data/");
-    private CheckpointManager checkpointManager = new CheckpointManager(batchCheckpointFile);
+    private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/parsed-data/");
+    private final CheckpointManager checkpointManager = new CheckpointManager(parserBatchCheckpointFile);
 
     public Parser(String XmlFilePath) {
         this.XmlFilePath = XmlFilePath;
-        this.previousBatchCounter = checkpointManager.readCheckpointBatch();
+        this.previousParseBatchCounter = checkpointManager.readCheckpointBatch();
     }
 
 
@@ -120,8 +120,8 @@ public class Parser {
                             case "page":
                                 //reached the end of the page.
                                 NormalizeText normalizeText = new NormalizeText();
-                                StringBuilder cleanText = normalizeText.cleanText(textBuilder);
-                                StringBuilder cleanTitle = normalizeText.cleanText(titleBuilder);
+                                StringBuilder cleanText = normalizeText.lowerCaseText(textBuilder);
+                                StringBuilder cleanTitle = normalizeText.lowerCaseText(titleBuilder);
                                 //normalize and clean up title and text.
 //                              LOGGER.log(Level.INFO,"Clean text length: {0}", cleanText.length());
                                 if (cleanText.isEmpty()) {
@@ -132,15 +132,15 @@ public class Parser {
                                 writeBuffer.add(wikiDocument);
                                 if (writeBuffer.size() >=  MAX_BATCH_SIZE) {
                                     //10k docs in the write buffer, need to write it to a file on disk.
-                                    //check if this is blocking or non blocking.
-                                    ArrayList<WikiDocument> newWriteBuffer = new ArrayList<>(writeBuffer);
+
+                                    List<WikiDocument> newWriteBuffer = new ArrayList<>(writeBuffer);
                                     writeBuffer.clear();
-                                    LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d",previousBatchCounter,batchCounter));
-                                    if (previousBatchCounter == -1 || batchCounter > previousBatchCounter) {
-                                        batchFileWriter.WriteBatch(newWriteBuffer,batchCounter);
+                                    LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousParseBatchCounter, parseBatchCounter));
+                                    if (previousParseBatchCounter == -1 || parseBatchCounter > previousParseBatchCounter) {
+                                        batchFileWriter.WriteBatch(newWriteBuffer, parseBatchCounter);
                                     }
-                                    checkpointManager.writeCheckpointBatch(batchCounter); //checkpoint it.
-                                    batchCounter++;
+                                    checkpointManager.writeCheckpointBatch(parseBatchCounter); //checkpoint it.
+                                    parseBatchCounter++;
                                 }
                                 //clean up modified data.
                                 titleBuilder.setLength(0);
@@ -149,7 +149,7 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 5) {
+                                if (docCounter > 500) {
                                     return;
                                 }
                         }
