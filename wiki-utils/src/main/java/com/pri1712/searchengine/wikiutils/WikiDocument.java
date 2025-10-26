@@ -11,6 +11,7 @@ public class WikiDocument {
     private String text;
     private String timestamp;
 
+    public WikiDocument() {}
     public WikiDocument(String id, String title, String text, String timestamp) {
         this.id = id;
         this.title = title;

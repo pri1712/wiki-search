@@ -13,15 +13,15 @@ public class NormalizeText {
             return new StringBuilder();
         }
         String rawText = text.toString().trim();
+        // remove articles with only redirects in them.
         if ((rawText.matches("(?is)^#redirect\\s*\\[\\[.*?\\]\\]")) || rawText.matches("(?is)^#REDIRECT\\s*\\[\\[.*?\\]\\]")) {
 //            LOGGER.log(Level.INFO,"Clean text: {0}", rawText);
             return new StringBuilder();
         }
         String lowercaseText = rawText.toLowerCase();
 //        LOGGER.log(Level.INFO,"Clean text: {0}", lowercaseText);
-        String cleanText = lowercaseText.replaceAll("[^a-z0-9\\s]"," ");
-        cleanText = cleanText.replaceAll("\\s+", " ").trim();
-        StringBuilder cleanSb =new StringBuilder(cleanText);
+        //String cleanText = lowercaseText.replaceAll("[^a-z0-9\\s]"," ");
+        StringBuilder cleanSb =new StringBuilder(lowercaseText);
         return cleanSb;
     }
 
