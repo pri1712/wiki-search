@@ -46,7 +46,8 @@ public class Tokenizer {
 //                System.out.printf("Title of the document is: %s %n", wikiDocument.getTitle());
                 //normalize then tokenize.
                 WikiDocument normalizedDocument =  tokenNormalizer.normalizeData(wikiDocument);
-                normalizedDocument = tokenNormalizer.tokenizeText(normalizedDocument);
+                TokenizedData tokenizedText = tokenNormalizer.tokenizeText(normalizedDocument); //tokenizedText now has the tokenized title and text for the document.
+
             }
 
         }
