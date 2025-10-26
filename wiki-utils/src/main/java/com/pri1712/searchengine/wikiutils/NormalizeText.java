@@ -8,7 +8,7 @@ public class NormalizeText {
 
     private static Logger LOGGER = Logger.getLogger(NormalizeText.class.getName());
 
-    public StringBuilder cleanText(StringBuilder text) {
+    public StringBuilder lowerCaseText(StringBuilder text) {
         if (text == null || text.isEmpty()) {
             return new StringBuilder();
         }

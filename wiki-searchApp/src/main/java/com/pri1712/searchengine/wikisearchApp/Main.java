@@ -22,7 +22,7 @@ public class Main {
         }
         try {
             Tokenizer tokenizer = new Tokenizer();
-            String parsedFilePath = "parsed-data";
+            String parsedFilePath = "data/parsed-data/";
             LOGGER.info("Parsing Wikipedia XML dump file: " + parsedFilePath);
             tokenizer.tokenizeData(parsedFilePath);
 

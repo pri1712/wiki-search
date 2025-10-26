@@ -62,7 +62,7 @@ public class TokenNormalizer {
                 stemmer.setCurrent(token);
                 stemmer.stem();
                 token = stemmer.getCurrent();
-                LOGGER.info("adding token: " + token + " to text tokens list");
+                LOGGER.fine("adding token: " + token + " to text tokens list");
                 textToken.add(token);
             }
         }
@@ -76,11 +76,11 @@ public class TokenNormalizer {
                 stemmer.setCurrent(token);
                 stemmer.stem();
                 token = stemmer.getCurrent();
-                LOGGER.info("adding token: " + token + " to title tokens list");
+                LOGGER.fine("adding token: " + token + " to title tokens list");
                 titleToken.add(token);
             }
         }
-        tokenizedData = new TokenizedData(textToken, titleToken);
+        tokenizedData = new TokenizedData(textToken, titleToken,wikiDocument.getId());
         return tokenizedData;
     }
 }
