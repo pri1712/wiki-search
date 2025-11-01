@@ -24,7 +24,7 @@ public class Tokenizer {
     ObjectMapper mapper = new ObjectMapper();
     TokenNormalizer tokenNormalizer = new TokenNormalizer();
     private int tokenizerBatchCounter = 0;
-    private int previousTokenizerBatchCounter = 0;
+    private int previousTokenizerBatchCounter;
     private final String tokenizerBatchCheckpointFile = "tokenizerCheckpoint.txt";
     private final CheckpointManager checkpointManager = new CheckpointManager(tokenizerBatchCheckpointFile);
     private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/tokenized-data/");

@@ -20,14 +20,14 @@ public class Indexer {
     private static Logger LOGGER = Logger.getLogger(String.valueOf(Indexer.class));
     ObjectMapper mapper = new ObjectMapper();
     private static int indexFileCounter = 0;
-    private static final int MAX_IN_MEMORY_SIZE = 4096;
+    private static final int MAX_IN_MEMORY_LENGTH = 10000;
     Map<String, Map<Integer,Integer>> invertedIndex = new HashMap<>();
 
     public Indexer() {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
     }
 
-    public void indexFile(String filePath) throws IOException {
+    public void indexData(String filePath) throws IOException {
         Path tokenizedPath = Paths.get(filePath);
         try (Stream<Path> fileStream = Files.list(tokenizedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
             fileStream.forEach(file -> {
@@ -56,6 +56,9 @@ public class Indexer {
                 boolean flush = flushToDisk();
                 if (flush) {
                     //flush to disk
+                    LOGGER.info("Flushing to disk");
+                    invertedIndex.clear();
+                    return;
                 }
             }
 
@@ -84,7 +87,7 @@ public class Indexer {
 
     private boolean flushToDisk() {
         //deciding whether to flush to disk or not.
-        return false;
+        return invertedIndex.size() >= MAX_IN_MEMORY_LENGTH; //very rudimentary check, use heap size later
     }
 
 
