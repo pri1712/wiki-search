@@ -54,7 +54,10 @@ public class Tokenizer {
         try (FileInputStream fis = new FileInputStream(file.toString());
         GZIPInputStream gis = new GZIPInputStream(fis);
         BufferedReader buffRead = new BufferedReader(new InputStreamReader(gis))) {
-            List<WikiDocument> jsonDocuments = mapper.readValue(buffRead, new TypeReference<List<WikiDocument>>() {});
+            List<WikiDocument> jsonDocuments = mapper.readValue(buffRead, new TypeReference<>() {
+            });
+            //dont need batch size here because content of each parsed file is being written as a batch.
+            // thus batching size is implicit.
             for (WikiDocument wikiDocument : jsonDocuments) {
 //                System.out.printf("Title of the document is: %s %n", wikiDocument.getTitle());
                 //normalize then tokenize.

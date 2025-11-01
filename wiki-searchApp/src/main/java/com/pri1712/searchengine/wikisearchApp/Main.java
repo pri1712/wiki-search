@@ -8,26 +8,40 @@ import java.util.logging.Logger;
 
 public class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+    private static final String PARSED_FILE_PATH = "data/parsed-data/";
+    private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter path to Wikipedia XML dump file: ");
         String filePath = scanner.nextLine().trim();
         scanner.close();
         long startTime = System.nanoTime();
+        //parser
         try {
             Parser parser = new Parser(filePath);
             parser.parseData();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        //tokenizer
         try {
             Tokenizer tokenizer = new Tokenizer();
-            String parsedFilePath = "data/parsed-data/";
-            LOGGER.info("Parsing Wikipedia XML dump file: " + parsedFilePath);
+            String parsedFilePath = PARSED_FILE_PATH;
+            LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
             tokenizer.tokenizeData(parsedFilePath);
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
+            throw new RuntimeException(e);
+        }
+        //indexer
+        try {
+            Indexer indexer = new Indexer();
+            String tokenizedFilePath = TOKENIZED_FILE_PATH;
+            LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
+            indexer.
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
         }
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
