@@ -14,12 +14,14 @@ public class Main {
         String filePath = scanner.nextLine().trim();
         scanner.close();
         long startTime = System.nanoTime();
+        //parser
         try {
             Parser parser = new Parser(filePath);
             parser.parseData();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        //tokenizer
         try {
             Tokenizer tokenizer = new Tokenizer();
             String parsedFilePath = "data/parsed-data/";
@@ -28,6 +30,13 @@ public class Main {
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
+            throw new RuntimeException(e);
+        }
+        //indexer
+        try {
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
         }
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
