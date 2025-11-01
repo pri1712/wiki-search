@@ -2,6 +2,7 @@ package com.pri1712.searchengine.wikiindexer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikitokenizer.TokenizedData;
 
 import java.io.*;
@@ -11,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -20,14 +22,15 @@ public class Indexer {
     private static Logger LOGGER = Logger.getLogger(String.valueOf(Indexer.class));
     ObjectMapper mapper = new ObjectMapper();
     private static int indexFileCounter = 0;
-    private static final int MAX_IN_MEMORY_SIZE = 4096;
-    Map<String, Map<Integer,Integer>> invertedIndex = new HashMap<>();
+    private static final int MAX_IN_MEMORY_LENGTH = 10000;
+    private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/indexed-data/");
+    Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
 
     public Indexer() {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
     }
 
-    public void indexFile(String filePath) throws IOException {
+    public void indexData(String filePath) throws IOException {
         Path tokenizedPath = Paths.get(filePath);
         try (Stream<Path> fileStream = Files.list(tokenizedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
             fileStream.forEach(file -> {
@@ -55,7 +58,13 @@ public class Indexer {
                 addDocument(document);
                 boolean flush = flushToDisk();
                 if (flush) {
-                    //flush to disk
+                    //sort all the keys and then flush to disk.
+
+                    LOGGER.info("Flushing to disk");
+                    batchFileWriter.writeIndex(invertedIndex,indexFileCounter);
+                    invertedIndex.clear();
+                    indexFileCounter++;
+                    return;
                 }
             }
 
@@ -84,7 +93,7 @@ public class Indexer {
 
     private boolean flushToDisk() {
         //deciding whether to flush to disk or not.
-        return false;
+        return invertedIndex.size() >= MAX_IN_MEMORY_LENGTH; //very rudimentary check, use heap size later
     }
 
 

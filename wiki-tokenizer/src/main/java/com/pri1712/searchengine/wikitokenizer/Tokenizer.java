@@ -13,7 +13,7 @@ import java.util.zip.GZIPInputStream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pri1712.searchengine.wikiparser.BatchFileWriter;
+import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikiparser.CheckpointManager;
 import com.pri1712.searchengine.wikiutils.WikiDocument;
 
@@ -24,7 +24,7 @@ public class Tokenizer {
     ObjectMapper mapper = new ObjectMapper();
     TokenNormalizer tokenNormalizer = new TokenNormalizer();
     private int tokenizerBatchCounter = 0;
-    private int previousTokenizerBatchCounter = 0;
+    private int previousTokenizerBatchCounter;
     private final String tokenizerBatchCheckpointFile = "tokenizerCheckpoint.txt";
     private final CheckpointManager checkpointManager = new CheckpointManager(tokenizerBatchCheckpointFile);
     private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/tokenized-data/");
@@ -69,7 +69,7 @@ public class Tokenizer {
             totalTokenizedData.clear();
             LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousTokenizerBatchCounter, tokenizerBatchCounter));
             if (previousTokenizerBatchCounter == -1 || previousTokenizerBatchCounter < tokenizerBatchCounter) {
-                batchFileWriter.WriteBatch(newTokenizedData, tokenizerBatchCounter);
+                batchFileWriter.writeBatch(newTokenizedData, tokenizerBatchCounter);
             }
             checkpointManager.writeCheckpointBatch(tokenizerBatchCounter);//store the checkpoint to a file.
             tokenizerBatchCounter++;

@@ -2,6 +2,9 @@ package com.pri1712.searchengine.wikisearchApp;
 
 import com.pri1712.searchengine.wikiparser.Parser;
 import com.pri1712.searchengine.wikitokenizer.Tokenizer;
+import com.pri1712.searchengine.wikiindexer.Indexer;
+
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,8 +42,8 @@ public class Main {
             Indexer indexer = new Indexer();
             String tokenizedFilePath = TOKENIZED_FILE_PATH;
             LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
-            indexer.
-        } catch (RuntimeException e) {
+            indexer.indexData(tokenizedFilePath);
+        } catch (RuntimeException | IOException e) {
             throw new RuntimeException(e);
         }
         long endTime = System.nanoTime();

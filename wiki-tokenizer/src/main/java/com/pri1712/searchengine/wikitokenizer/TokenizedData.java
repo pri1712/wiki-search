@@ -11,6 +11,7 @@ public class TokenizedData {
         this.tokenizedTitle = tokenizedTitle;
         this.Id = Id;
     }
+    public TokenizedData() {}
 
     public String getId() {
         return Id;

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.*;
 
+import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikiutils.NormalizeText;
 import com.pri1712.searchengine.wikiutils.WikiDocument;
 
@@ -137,7 +138,7 @@ public class Parser {
                                     writeBuffer.clear();
                                     LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousParseBatchCounter, parseBatchCounter));
                                     if (previousParseBatchCounter == -1 || parseBatchCounter > previousParseBatchCounter) {
-                                        batchFileWriter.WriteBatch(newWriteBuffer, parseBatchCounter);
+                                        batchFileWriter.writeBatch(newWriteBuffer, parseBatchCounter);
                                     }
                                     checkpointManager.writeCheckpointBatch(parseBatchCounter); //checkpoint it.
                                     parseBatchCounter++;
