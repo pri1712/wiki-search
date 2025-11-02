@@ -71,6 +71,22 @@ public class Indexer {
     private void mergeBatch(List<Path> batch, Path outputPath) throws IOException {
         //actual file merging logic.
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
+        List<HeapEntry> entries = new ArrayList<>();
+        for (Path p : batch) {
+            FileInputStream fis = new FileInputStream(p.toFile());
+            GZIPInputStream gis = new GZIPInputStream(fis);
+            BufferedReader br = new BufferedReader(new InputStreamReader(gis));
+            String line = br.readLine();
+            if (line != null) {
+                //create heapentry obj.
+                Map <String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(line, new TypeReference<>() {});
+                String token = keyValueIndex.keySet().iterator().next();
+                Map<Integer,Integer> docFreqMap = keyValueIndex.get(token);
+                HeapEntry heapEntry = new HeapEntry(token, docFreqMap, br);
+                entries.add(heapEntry);
+            }
+        }
+        heap.addAll(entries);
 
     }
 
