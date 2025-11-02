@@ -9,10 +9,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -28,6 +25,8 @@ public class Indexer {
 
     public Indexer() {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
+        //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
+        // if we wanna have memory based flushing
     }
 
     public void indexData(String filePath) throws IOException {
@@ -46,6 +45,12 @@ public class Indexer {
         }
     }
 
+    public void mergeAllIndexes(String filePath) throws IOException {
+        Path indexedPath = Paths.get(filePath);
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>(); //to handle the k way sort
+
+    }
+
     private void addToIndex(Path file) throws FileNotFoundException {
         try {
             FileInputStream fis = new FileInputStream(file.toString());
@@ -58,8 +63,6 @@ public class Indexer {
                 addDocument(document);
                 boolean flush = flushToDisk();
                 if (flush) {
-                    //sort all the keys and then flush to disk.
-
                     LOGGER.info("Flushing to disk");
                     batchFileWriter.writeIndex(invertedIndex,indexFileCounter);
                     invertedIndex.clear();
@@ -95,6 +98,7 @@ public class Indexer {
         //deciding whether to flush to disk or not.
         return invertedIndex.size() >= MAX_IN_MEMORY_LENGTH; //very rudimentary check, use heap size later
     }
+
 
 
 }
