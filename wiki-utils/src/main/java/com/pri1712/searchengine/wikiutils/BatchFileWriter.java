@@ -31,26 +31,31 @@ public class BatchFileWriter {
         new File(this.outputDir).mkdirs();
     }
 
-    public void writeBatch(List<?> batch, int batchCount) {
+    public void writeBatch(List<?> batch, int batchCount) throws IOException {
         String outputFile = String.format("%sbatch_%05d.json.gz", outputDir, batchCount);
+        GZIPOutputStream gos = null;
         try {
             FileOutputStream fos = new FileOutputStream(outputFile);
-            GZIPOutputStream gos = new GZIPOutputStream(fos);
+            gos = new GZIPOutputStream(fos);
             mapper.writeValue(gos, batch);
             LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount+1, outputFile));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write batch to file "+outputFile,e);
+            throw new RuntimeException(e);
+        } finally {
+            assert gos != null;
+            gos.close();
         }
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
         LOGGER.info(String.format("Heap used: %d MB", used));
     }
 
-    public void writeIndex(Map<String, Map<Integer,Integer>> invertedIndex,int batchCount) {
+    public void writeIndex(Map<String, Map<Integer,Integer>> invertedIndex,int batchCount) throws IOException {
         String outputFile = String.format("%sindex_%05d.json.gz", outputDir, batchCount);
+        GZIPOutputStream gos = null;
         try {
             FileOutputStream fos = new FileOutputStream(outputFile);
-            GZIPOutputStream gos = new GZIPOutputStream(fos);
+            gos = new GZIPOutputStream(fos);
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
             for (var entry : invertedIndex.entrySet()) {
                 mapper.writeValue(bw, Map.of(entry.getKey(), entry.getValue()));
@@ -62,6 +67,8 @@ public class BatchFileWriter {
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error while writing index",e);
             LOGGER.info(String.format("Failed to write index %s", outputFile));
+        } finally {
+
         }
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
