@@ -22,6 +22,7 @@ public class Indexer {
     private static final int MAX_IN_MEMORY_LENGTH = 10000;
     private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/indexed-data/");
     Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
+    private static final int MAX_FILE_STREAM = 30;
 
     public Indexer() {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
@@ -47,7 +48,29 @@ public class Indexer {
 
     public void mergeAllIndexes(String filePath) throws IOException {
         Path indexedPath = Paths.get(filePath);
-        PriorityQueue<Integer> minHeap = new PriorityQueue<>(); //to handle the k way sort
+        int indexRound = 0;
+        List<Path> indexFiles = Files.list(indexedPath).filter(f -> f.toString().endsWith(".json.gz"))
+                                .toList();
+        while (indexFiles.size() > 1) {
+            //till we have only one index.
+            List<Path> nextRoundIndexes = new ArrayList<>();
+            for (int i =0; i<indexFiles.size();i+=MAX_FILE_STREAM) {
+                List<Path> batch = indexFiles.subList(i, Math.min(i+MAX_FILE_STREAM, indexFiles.size()));
+                Path outputPath = indexedPath.resolve(String.format("merged_index%d_%03d.json.gz", indexRound, i / MAX_FILE_STREAM));
+                mergeBatch(batch, outputPath);
+                nextRoundIndexes.add(outputPath);
+
+                for (Path p : batch) Files.deleteIfExists(p);
+            }
+            indexFiles = nextRoundIndexes;
+            indexRound++;
+        }
+
+    }
+
+    private void mergeBatch(List<Path> batch, Path outputPath) throws IOException {
+        //actual file merging logic.
+        PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
 
     }
 
