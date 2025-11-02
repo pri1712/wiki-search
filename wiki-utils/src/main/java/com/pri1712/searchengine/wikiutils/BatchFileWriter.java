@@ -1,6 +1,7 @@
 package com.pri1712.searchengine.wikiutils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -17,7 +18,8 @@ public class BatchFileWriter {
 
     private final String outputDir;
     ObjectMapper mapper = new ObjectMapper()
-            .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+            .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+            .configure(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM, true);
 
     public  BatchFileWriter(String outputDir) throws IllegalArgumentException {
         if (outputDir==null || outputDir.trim().isEmpty()) {
@@ -52,23 +54,24 @@ public class BatchFileWriter {
 
     public void writeIndex(Map<String, Map<Integer,Integer>> invertedIndex,int batchCount) throws IOException {
         String outputFile = String.format("%sindex_%05d.json.gz", outputDir, batchCount);
-        GZIPOutputStream gos = null;
-        try {
-            FileOutputStream fos = new FileOutputStream(outputFile);
-            gos = new GZIPOutputStream(fos);
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
+        try (
+                FileOutputStream fos = new FileOutputStream(outputFile);
+                GZIPOutputStream gos = new GZIPOutputStream(fos);
+                OutputStreamWriter osw = new OutputStreamWriter(gos, StandardCharsets.UTF_8);
+                BufferedWriter bw = new BufferedWriter(osw)
+        ) {
             for (var entry : invertedIndex.entrySet()) {
                 mapper.writeValue(bw, Map.of(entry.getKey(), entry.getValue()));
-                bw.newLine();
+                bw.write("\n");
             }
+            bw.flush();
+            gos.finish();
             LOGGER.info(String.format("Wrote index batch %05d (%d terms) to %s",
                     batchCount, invertedIndex.size(), outputFile));
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error while writing index",e);
             LOGGER.info(String.format("Failed to write index %s", outputFile));
-        } finally {
-
         }
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);

@@ -56,14 +56,20 @@ public class Indexer {
     public void mergeAllIndexes(String filePath) throws IOException {
         Path indexedPath = Paths.get(filePath);
         int indexRound = 0;
-        List<Path> indexFiles = Files.list(indexedPath).filter(f -> f.toString().endsWith(".json.gz"))
-                                .sorted().toList();
+        List<Path> indexFiles = Files.list(indexedPath)
+                .filter(p -> {
+                    String name = p.getFileName().toString();
+                    return name.endsWith(".json.gz") && !name.startsWith("merged_");
+                }).sorted().toList();
         while (indexFiles.size() > 1) {
             //till we have only one index.
             List<Path> nextRoundIndexes = new ArrayList<>();
             for (int i =0; i<indexFiles.size(); i+=MAX_FILE_STREAM) {
                 List<Path> batch = indexFiles.subList(i, Math.min(i+MAX_FILE_STREAM, indexFiles.size()));
                 Path outputPath = indexedPath.resolve(String.format("merged_index%d_%03d.json.gz", indexRound, i / MAX_FILE_STREAM));
+                if (outputPath.toFile().exists()) {
+                    outputPath.toFile().delete();
+                }
                 LOGGER.info("Starting to merge indexed files; round " + indexRound);
                 mergeBatch(batch, outputPath);
                 nextRoundIndexes.add(outputPath);
@@ -86,23 +92,23 @@ public class Indexer {
                 GZIPInputStream gis = new GZIPInputStream(fis);
                 br = new BufferedReader(new InputStreamReader(gis));
                 String line = br.readLine();
-                LOGGER.log(Level.INFO, "Processing line " + line + " from file " + p);
+//                LOGGER.log(Level.INFO, "Processing line " + line + " from file " + p);
                 if (line != null) {
                     //create heapentry obj.
                     Map <String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(line, new TypeReference<>() {});
                     String token = keyValueIndex.keySet().iterator().next();
                     Map<Integer,Integer> docFreqMap = keyValueIndex.get(token);
                     HeapEntry heapEntry = new HeapEntry(token, docFreqMap, br);
-                    LOGGER.info("adding token:" + heapEntry.token + " to entries array");
+//                    LOGGER.info("adding token:" + heapEntry.token + " to entries array");
                     entries.add(heapEntry);
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                LOGGER.log(Level.SEVERE, "Error reading file " + p, e);
             }
         }
-
+//        LOGGER.info("Processing " + entries.size() + " entries");
         heap.addAll(entries);
-        LOGGER.info("Creating a gzip o/p stream");
+//        LOGGER.info("Creating a gzip o/p stream");
         GZIPOutputStream gos  = new GZIPOutputStream(new FileOutputStream(outputPath.toFile()));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
         while (!heap.isEmpty()) {
@@ -123,17 +129,21 @@ public class Indexer {
     }
 
     private void nextLine(HeapEntry heapEntry, PriorityQueue<HeapEntry> heap, ObjectMapper mapper) throws IOException {
-        String nextLine = heapEntry.reader.readLine();
-        if (nextLine == null) {
-            LOGGER.log(Level.INFO, "Reached end of file");
-            heapEntry.reader.close();
-            return;
+        try {
+            String nextLine = heapEntry.reader.readLine();
+            if (nextLine == null) {
+//                LOGGER.log(Level.INFO, "Reached end of file");
+                heapEntry.reader.close();
+                return;
+            }
+            Map<String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(nextLine, new TypeReference<>() {});
+            String token = keyValueIndex.keySet().iterator().next();
+            Map<Integer,Integer> docFreqMap = keyValueIndex.get(token);
+            HeapEntry nextHeapEntry = new HeapEntry(token, docFreqMap, heapEntry.reader);
+            heap.add(nextHeapEntry);
+        } catch (IOException e) {
+            LOGGER.warning("Failed to advance to next line of the ndjson file due to :" + e);
         }
-        Map<String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(nextLine, new TypeReference<>() {});
-        String token = keyValueIndex.keySet().iterator().next();
-        Map<Integer,Integer> docFreqMap = keyValueIndex.get(token);
-        HeapEntry nextHeapEntry = new HeapEntry(token, docFreqMap, heapEntry.reader);
-        heap.add(nextHeapEntry);
     }
 
     private void addToIndex(Path file) throws FileNotFoundException {
