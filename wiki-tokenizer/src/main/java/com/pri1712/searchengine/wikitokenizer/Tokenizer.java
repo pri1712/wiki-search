@@ -67,7 +67,7 @@ public class Tokenizer {
             }
             List<TokenizedData> newTokenizedData = new ArrayList<>(totalTokenizedData);
             totalTokenizedData.clear();
-            LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousTokenizerBatchCounter, tokenizerBatchCounter));
+//            LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousTokenizerBatchCounter, tokenizerBatchCounter));
             if (previousTokenizerBatchCounter == -1 || previousTokenizerBatchCounter < tokenizerBatchCounter) {
                 batchFileWriter.writeBatch(newTokenizedData, tokenizerBatchCounter);
             }
