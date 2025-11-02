@@ -9,11 +9,15 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class Indexer {
     private static Logger LOGGER = Logger.getLogger(String.valueOf(Indexer.class));
@@ -86,8 +90,35 @@ public class Indexer {
                 entries.add(heapEntry);
             }
         }
-        heap.addAll(entries);
 
+        heap.addAll(entries);
+        GZIPOutputStream gos  = new GZIPOutputStream(new FileOutputStream(outputPath.toFile()));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
+        while (!heap.isEmpty()) {
+            HeapEntry heapEntry = heap.poll();
+            //now find all the ones with the same token.
+            String token = heapEntry.token;
+            Map<Integer,Integer> docFreqMap = new HashMap<>(heapEntry.docFreq);
+            while (!heap.isEmpty() && heap.peek().token.equals(token)) {
+                HeapEntry matchingEntry = heap.poll();
+                matchingEntry.docFreq.forEach((doc, freq) -> docFreqMap.merge(doc, freq, Integer::sum));
+                nextLine(matchingEntry,heap,mapper);
+            }
+
+        }
+    }
+
+    private void nextLine(HeapEntry heapEntry, PriorityQueue<HeapEntry> heap, ObjectMapper mapper) throws IOException {
+        String nextLine = heapEntry.reader.readLine();
+        if (nextLine == null) {
+            LOGGER.log(Level.INFO, "Reached end of file");
+            return;
+        }
+        Map<String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(nextLine, new TypeReference<>() {});
+        String token = keyValueIndex.keySet().iterator().next();
+        Map<Integer,Integer> docFreqMap = keyValueIndex.get(token);
+        HeapEntry nextHeapEntry = new HeapEntry(token, docFreqMap, heapEntry.reader);
+        heap.add(nextHeapEntry);
     }
 
     private void addToIndex(Path file) throws FileNotFoundException {
