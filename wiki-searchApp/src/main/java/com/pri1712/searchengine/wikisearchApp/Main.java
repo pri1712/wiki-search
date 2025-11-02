@@ -13,7 +13,7 @@ public class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
     private static final String PARSED_FILE_PATH = "data/parsed-data/";
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
-    private static final String INDEXED_FILE_PATH = "data/indexed-data/";
+    private static final String INDEXED_FILE_PATH = "data/inverted-index/";
 
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
@@ -44,7 +44,7 @@ public class Main {
         }
         //indexer
         try {
-            Indexer indexer = new Indexer();
+            Indexer indexer = new Indexer(indexedFilePath);
             LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
             indexer.indexData(tokenizedFilePath);
             indexer.mergeAllIndexes(indexedFilePath);

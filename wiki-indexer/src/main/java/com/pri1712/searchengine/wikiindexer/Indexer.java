@@ -27,14 +27,15 @@ public class Indexer {
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
     private static int indexFileCounter = 0;
     private static final int MAX_IN_MEMORY_LENGTH = 10000;
-    private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/indexed-data/");
+    private BatchFileWriter batchFileWriter;
     Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
     private static final int MAX_FILE_STREAM = 30;
 
-    public Indexer() {
+    public Indexer(String indexedFilePath) {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
         //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
         // if we wanna have memory based flushing
+        this.batchFileWriter = new BatchFileWriter(indexedFilePath);
     }
 
     public void indexData(String filePath) throws IOException {
@@ -73,7 +74,7 @@ public class Indexer {
                 LOGGER.info("Starting to merge indexed files; round " + indexRound);
                 mergeBatch(batch, outputPath);
                 nextRoundIndexes.add(outputPath);
-//                for (Path p : batch) Files.deleteIfExists(p);
+                for (Path p : batch) Files.deleteIfExists(p);
             }
             indexFiles = nextRoundIndexes;
             indexRound++;
