@@ -73,7 +73,7 @@ public class Indexer {
                 LOGGER.info("Starting to merge indexed files; round " + indexRound);
                 mergeBatch(batch, outputPath);
                 nextRoundIndexes.add(outputPath);
-//                for (Path p : batch) Files.deleteIfExists(p);
+                for (Path p : batch) Files.deleteIfExists(p);
             }
             indexFiles = nextRoundIndexes;
             indexRound++;
@@ -86,6 +86,7 @@ public class Indexer {
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
         List<HeapEntry> entries = new ArrayList<>();
         for (Path p : batch) {
+            //basically read the first element of all the files part of batch.
             BufferedReader br;
             try {
                 FileInputStream fis = new FileInputStream(p.toFile());
@@ -126,6 +127,7 @@ public class Indexer {
             nextLine(heapEntry,heap,mapper);
         }
         bw.flush();
+        gos.finish();
     }
 
     private void nextLine(HeapEntry heapEntry, PriorityQueue<HeapEntry> heap, ObjectMapper mapper) throws IOException {
