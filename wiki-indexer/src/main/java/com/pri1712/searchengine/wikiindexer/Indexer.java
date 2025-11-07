@@ -27,21 +27,21 @@ public class Indexer {
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
     private static int indexFileCounter = 0;
     private static final int MAX_IN_MEMORY_LENGTH = 10000;
-    private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/indexed-data/");
+    private BatchFileWriter batchFileWriter;
     Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
-    private static final int MAX_FILE_STREAM = 30;
-
-    public Indexer() {
+    private static final int MAX_FILE_STREAM = 10;
+//    int temp_counter = 0;
+    public Indexer(String indexedFilePath) {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
         //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
         // if we wanna have memory based flushing
+        this.batchFileWriter = new BatchFileWriter(indexedFilePath);
     }
 
     public void indexData(String filePath) throws IOException {
         Path tokenizedPath = Paths.get(filePath);
         try (Stream<Path> fileStream = Files.list(tokenizedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
             fileStream.forEach(file -> {
-                //actual indexing logic here.
                 try {
                     addToIndex(file);
                 } catch (Exception e) {
@@ -53,6 +53,7 @@ public class Indexer {
         }
     }
 
+    //merge all the created inverted indexes.
     public void mergeAllIndexes(String filePath) throws IOException {
         Path indexedPath = Paths.get(filePath);
         int indexRound = 0;
@@ -61,19 +62,18 @@ public class Indexer {
                     String name = p.getFileName().toString();
                     return name.endsWith(".json.gz") && !name.startsWith("merged_");
                 }).sorted().toList();
+        //create a list of all the index files.
         while (indexFiles.size() > 1) {
-            //till we have only one index.
+            //till we have only one index file (final inverted index)
+            LOGGER.log(Level.INFO,"index files size: {0}", indexFiles.size());
             List<Path> nextRoundIndexes = new ArrayList<>();
             for (int i =0; i<indexFiles.size(); i+=MAX_FILE_STREAM) {
                 List<Path> batch = indexFiles.subList(i, Math.min(i+MAX_FILE_STREAM, indexFiles.size()));
                 Path outputPath = indexedPath.resolve(String.format("merged_index%d_%03d.json.gz", indexRound, i / MAX_FILE_STREAM));
-                if (outputPath.toFile().exists()) {
-                    outputPath.toFile().delete();
-                }
                 LOGGER.info("Starting to merge indexed files; round " + indexRound);
                 mergeBatch(batch, outputPath);
                 nextRoundIndexes.add(outputPath);
-//                for (Path p : batch) Files.deleteIfExists(p);
+                for (Path p : batch) Files.deleteIfExists(p);
             }
             indexFiles = nextRoundIndexes;
             indexRound++;
@@ -86,6 +86,7 @@ public class Indexer {
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
         List<HeapEntry> entries = new ArrayList<>();
         for (Path p : batch) {
+            //basically read the first element of all the files part of batch.
             BufferedReader br;
             try {
                 FileInputStream fis = new FileInputStream(p.toFile());
@@ -126,6 +127,7 @@ public class Indexer {
             nextLine(heapEntry,heap,mapper);
         }
         bw.flush();
+        gos.finish();
     }
 
     private void nextLine(HeapEntry heapEntry, PriorityQueue<HeapEntry> heap, ObjectMapper mapper) throws IOException {
@@ -134,6 +136,8 @@ public class Indexer {
             if (nextLine == null) {
 //                LOGGER.log(Level.INFO, "Reached end of file");
                 heapEntry.reader.close();
+//                temp_counter++;
+//                LOGGER.info("temp counter: " + temp_counter);
                 return;
             }
             Map<String,Map<Integer,Integer>> keyValueIndex = mapper.readValue(nextLine, new TypeReference<>() {});
@@ -142,6 +146,7 @@ public class Indexer {
             HeapEntry nextHeapEntry = new HeapEntry(token, docFreqMap, heapEntry.reader);
             heap.add(nextHeapEntry);
         } catch (IOException e) {
+            e.printStackTrace();
             LOGGER.warning("Failed to advance to next line of the ndjson file due to :" + e);
         }
     }

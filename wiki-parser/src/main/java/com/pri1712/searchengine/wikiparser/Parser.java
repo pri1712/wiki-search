@@ -22,7 +22,7 @@ public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
     private static final int MAX_BATCH_SIZE = 10;
-
+    private static final int MAX_DOCS_TO_PROCESS = 500;
     private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
@@ -136,7 +136,7 @@ public class Parser {
 
                                     List<WikiDocument> newWriteBuffer = new ArrayList<>(writeBuffer);
                                     writeBuffer.clear();
-                                    LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousParseBatchCounter, parseBatchCounter));
+//                                    LOGGER.info(String.format("Previous batch counter was %d and new batch counter is %d", previousParseBatchCounter, parseBatchCounter));
                                     if (previousParseBatchCounter == -1 || parseBatchCounter > previousParseBatchCounter) {
                                         batchFileWriter.writeBatch(newWriteBuffer, parseBatchCounter);
                                     }
@@ -150,7 +150,7 @@ public class Parser {
                                 ID = "";
                                 firstID = true;
                                 docCounter++;
-                                if (docCounter > 500) {
+                                if (MAX_DOCS_TO_PROCESS >=0 && docCounter > MAX_DOCS_TO_PROCESS) {
                                     return;
                                 }
                         }

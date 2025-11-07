@@ -40,7 +40,7 @@ public class BatchFileWriter {
             FileOutputStream fos = new FileOutputStream(outputFile);
             gos = new GZIPOutputStream(fos);
             mapper.writeValue(gos, batch);
-            LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount+1, outputFile));
+//            LOGGER.info(String.format("successfully wrote %d batches to file %s", batchCount+1, outputFile));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -66,8 +66,8 @@ public class BatchFileWriter {
             }
             bw.flush();
             gos.finish();
-            LOGGER.info(String.format("Wrote index batch %05d (%d terms) to %s",
-                    batchCount, invertedIndex.size(), outputFile));
+//            LOGGER.info(String.format("Wrote index batch %05d (%d terms) to %s",
+//                    batchCount, invertedIndex.size(), outputFile));
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error while writing index",e);
