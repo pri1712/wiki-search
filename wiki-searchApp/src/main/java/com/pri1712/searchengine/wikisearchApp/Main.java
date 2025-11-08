@@ -1,10 +1,13 @@
 package com.pri1712.searchengine.wikisearchApp;
 
 import com.pri1712.searchengine.wikiparser.Parser;
+import com.pri1712.searchengine.wikitokenizer.TokenNormalizer;
 import com.pri1712.searchengine.wikitokenizer.Tokenizer;
 import com.pri1712.searchengine.wikiindexer.Indexer;
+import com.pri1712.searchengine.wikiquerying.QueryProcessing;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +26,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter path to Wikipedia XML dump file: ");
         String dataFilePath = scanner.nextLine().trim();
-        scanner.close();
+
         long startTime = System.nanoTime();
         //parser
         try {
@@ -55,5 +58,15 @@ public class Main {
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
         LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
+
+        LOGGER.log(Level.INFO, "Setting up for querying----");
+        System.out.println("Enter your search query:");
+        String query= scanner.nextLine();
+        scanner.close();
+        QueryProcessing queryProcessor=new QueryProcessing();
+        List<String>processedQuery= queryProcessor.processQuery(query);
+        List<String> results=queryProcessor.search(processedQuery ,indexedFilePath);
+
+
     }
 }
