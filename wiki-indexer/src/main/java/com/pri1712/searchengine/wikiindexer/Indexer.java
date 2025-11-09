@@ -28,7 +28,7 @@ public class Indexer {
     private static int indexFileCounter = 0;
     private static final int MAX_IN_MEMORY_LENGTH = 10000;
     private BatchFileWriter batchFileWriter;
-    Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
+    Map<String, Map<Integer,Integer>>  invertedIndex = new TreeMap<>();
     private static final int MAX_FILE_STREAM = 10;
 //    int temp_counter = 0;
     public Indexer(String indexedFilePath) {
@@ -43,6 +43,7 @@ public class Indexer {
         try (Stream<Path> fileStream = Files.list(tokenizedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
             fileStream.forEach(file -> {
                 try {
+                  // start computing the inverted index (freq+docID per term)
                     addToIndex(file);
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, "Error indexing file: " + file, e);
@@ -161,14 +162,17 @@ public class Indexer {
             for (TokenizedData document : tokenizedDocuments) {
                 //process each json file of title,text,doc id here separately and add to index.
                 addDocument(document);
-                boolean flush = flushToDisk();
-                if (flush) {
+                long preUsedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024); //used mem in MB
+                if (shouldFlush()) {
                     LOGGER.info("Flushing to disk");
                     batchFileWriter.writeIndex(invertedIndex,indexFileCounter);
                     invertedIndex.clear();
                     indexFileCounter++;
-                    return;
+                  long postUsedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+                  LOGGER.info(String.format("Memory before flushing to disk was %d and after flushing it was %d",preUsedMemory,postUsedMemory));
+                  return;
                 }
+
             }
 
         } catch (IOException e) {
@@ -194,9 +198,10 @@ public class Indexer {
 
     }
 
-    private boolean flushToDisk() {
+    private boolean shouldFlush() {
         //deciding whether to flush to disk or not.
         return invertedIndex.size() >= MAX_IN_MEMORY_LENGTH; //very rudimentary check, use heap size later
+
     }
 
 
