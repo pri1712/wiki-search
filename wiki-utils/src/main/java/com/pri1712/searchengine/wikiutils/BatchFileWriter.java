@@ -49,7 +49,7 @@ public class BatchFileWriter {
         }
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-        LOGGER.info(String.format("Heap used: %d MB", used));
+        LOGGER.fine(String.format("Heap used: %d MB", used));
     }
 
     public void writeIndex(Map<String, Map<Integer,Integer>> invertedIndex,int batchCount) throws IOException {
@@ -71,10 +71,10 @@ public class BatchFileWriter {
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error while writing index",e);
-            LOGGER.info(String.format("Failed to write index %s", outputFile));
+            LOGGER.fine(String.format("Failed to write index %s", outputFile));
         }
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-        LOGGER.info(String.format("Heap used: %d MB", used));
+        LOGGER.fine(String.format("Heap used: %d MB", used));
     }
 }

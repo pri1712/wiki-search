@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pri1712.searchengine.wikiindexer.compression.IndexCompression;
 import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikitokenizer.TokenizedData;
 
@@ -30,7 +31,8 @@ public class Indexer {
     private BatchFileWriter batchFileWriter;
     Map<String, Map<Integer,Integer>>  invertedIndex = new TreeMap<>();
     private static final int MAX_FILE_STREAM = 10;
-//    int temp_counter = 0;
+    IndexCompression compressor = new IndexCompression();
+
     public Indexer(String indexedFilePath) {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
         //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
@@ -79,6 +81,8 @@ public class Indexer {
             indexFiles = nextRoundIndexes;
             indexRound++;
         }
+        LOGGER.info("Indexed all data.");
+        compressor.deltaEncode(indexFiles.get(0));
 
     }
 
@@ -119,11 +123,19 @@ public class Indexer {
             String token = heapEntry.token;
             Map<Integer,Integer> docFreqMap = new HashMap<>(heapEntry.docFreq);
             while (!heap.isEmpty() && heap.peek().token.equals(token)) {
+              //finding all the entries with the same token.
                 HeapEntry matchingEntry = heap.poll();
                 matchingEntry.docFreq.forEach((doc, freq) -> docFreqMap.merge(doc, freq, Integer::sum));
                 nextLine(matchingEntry,heap,mapper);
             }
-            mapper.writeValue(bw, Map.of(token,docFreqMap));
+            List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(docFreqMap.entrySet());
+            sortedEntries.sort(Map.Entry.comparingByKey());
+
+            Map<Integer, Integer> sortedDocFreqMap = new LinkedHashMap<>();
+            for (var e : sortedEntries) {
+              sortedDocFreqMap.put(e.getKey(), e.getValue());
+            }
+            mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
             bw.newLine();
             nextLine(heapEntry,heap,mapper);
         }

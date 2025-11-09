@@ -1,0 +1,10 @@
+wiki-indexer/target
+wiki-parser/target
+wiki-searchApp/target
+wiki-tokenizer/target
+wiki-utils/target
+enwiki-latest-pages-articles.xml.bz2
+wiki-search-obsidian
+data/
+out/
+.idea
