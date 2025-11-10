@@ -133,9 +133,7 @@ public class Indexer {
                 LOGGER.log(Level.SEVERE, "Error reading file " + p, e);
             }
         }
-//        LOGGER.info("Processing " + entries.size() + " entries");
         heap.addAll(entries);
-//        LOGGER.info("Creating a gzip o/p stream");
 
         while (!heap.isEmpty()) {
             HeapEntry heapEntry = heap.poll();
@@ -148,12 +146,6 @@ public class Indexer {
                 matchingEntry.docFreq.forEach((doc, freq) -> docFreqMap.merge(doc, freq, Integer::sum));
                 nextLine(matchingEntry,heap,mapper);
             }
-            if (lastRound) {
-                //we are on the last merge of the indexing module.
-                long byteOffset = cos.getByteCount();
-                tokenOffsets.put(token, byteOffset);
-                LOGGER.fine("added token to the offset mapper");
-            }
             //sorting doc ID by key for delta encoding.
             List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(docFreqMap.entrySet());
             sortedEntries.sort(Map.Entry.comparingByKey());
@@ -162,18 +154,31 @@ public class Indexer {
             for (var e : sortedEntries) {
               sortedDocFreqMap.put(e.getKey(), e.getValue());
             }
+            bw.flush();
+            gos.flush();
+            if (lastRound) {
+                //we are on the last merge of the indexing module.
+                long byteOffset = cos.getByteCount();
+                tokenOffsets.put(token, byteOffset);
+                LOGGER.fine("added token to the offset mapper");
+            }
             mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
             bw.newLine();
             nextLine(heapEntry,heap,mapper);
         }
         bw.flush();
         gos.finish();
+
         if (lastRound) {
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
             mapper.writeValue(osw, tokenOffsets);
             LOGGER.fine("Wrote token offsets to " + tokenIndexOffsetPath);
+            osw.flush();
+            osw.close();
+            gos2.finish();
+            gos2.close();
         }
     }
 
