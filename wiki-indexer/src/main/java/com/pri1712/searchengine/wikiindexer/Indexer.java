@@ -173,7 +173,10 @@ public class Indexer {
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
-            mapper.writeValue(osw, tokenOffsets);
+            for (Map.Entry<String,Long> entry : tokenOffsets.entrySet()) {
+                mapper.writeValue(osw, Map.of(entry.getKey(),entry.getValue()));
+                osw.write("\n");;
+            }
             LOGGER.fine("Wrote token offsets to " + tokenIndexOffsetPath);
             osw.flush();
             osw.close();
