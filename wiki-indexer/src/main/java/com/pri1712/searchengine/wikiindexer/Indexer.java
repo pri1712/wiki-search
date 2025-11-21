@@ -67,7 +67,7 @@ public class Indexer {
         List<Path> indexFiles = Files.list(indexedPath)
                 .filter(p -> {
                     String name = p.getFileName().toString();
-                    return name.endsWith(".json.gz") && !name.startsWith("merged_");
+                    return name.endsWith(".json.gz") && !name.startsWith("merged_") && !name.startsWith("token_");
                 }).sorted().toList();
         //create a list of all the index files.
         while (indexFiles.size() > 1) {
@@ -103,9 +103,16 @@ public class Indexer {
     private void mergeBatch(List<Path> batch, Path outputIndexPath, Path tokenIndexOffsetPath , boolean lastRound) throws IOException {
         //actual file merging logic.
         FileOutputStream fos = new FileOutputStream(outputIndexPath.toFile());
-        CountingOutputStream cos = new CountingOutputStream(fos);
-        GZIPOutputStream gos  = new GZIPOutputStream(cos);
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos, "UTF-8"));
+        CountingOutputStream cos = null;
+        GZIPOutputStream gos = null;
+        if (lastRound) {
+            cos = new CountingOutputStream(fos);
+            gos = new GZIPOutputStream(cos);
+        }
+        else {
+            gos = new GZIPOutputStream(fos);
+        }
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos, StandardCharsets.UTF_8));
         Map<String,Long> tokenOffsets = new LinkedHashMap<>();
 
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
@@ -159,6 +166,7 @@ public class Indexer {
             if (lastRound) {
                 //we are on the last merge of the indexing module.
                 long byteOffset = cos.getByteCount();
+                LOGGER.info("token offset:" + byteOffset);
                 tokenOffsets.put(token, byteOffset);
                 LOGGER.fine("added token to the offset mapper");
             }
@@ -170,6 +178,14 @@ public class Indexer {
         gos.finish();
 
         if (lastRound) {
+//            int count = 0;
+//            for (var entry : tokenOffsets.entrySet()) {
+//                LOGGER.info("token offset: " + entry.getValue());
+//                count ++;
+//                if (count > 100) {
+//                    break;
+//                }
+//            }
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
