@@ -22,7 +22,7 @@ public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
     private static final int MAX_BATCH_SIZE = 10;
-    private static final int MAX_DOCS_TO_PROCESS = 500;
+    private static final int MAX_DOCS_TO_PROCESS = 50000;
     private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
