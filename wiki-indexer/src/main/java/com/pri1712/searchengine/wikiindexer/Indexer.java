@@ -160,14 +160,14 @@ public class Indexer {
             }
             if (lastRound) {
                 //we are on the last merge of the indexing module.
-                //the issue is happening here itself, due to the block based flush nature of the streams.
+                long before = counter.getCount();
                 gen.writeObject(Map.of(token, sortedDocFreqMap));
                 gen.flush();
-                long jsonBytesLength = counter.getCount();
-                LOGGER.info("token offset:" + byteOffset);
+                long after = counter.getCount();
+                long byteLength = after - before;
                 tokenOffsets.put(token, byteOffset);
-                byteOffset += jsonBytesLength + 1;
-                LOGGER.fine("added token to the offset mapper");
+                byteOffset += byteLength + 1;
+//                LOGGER.fine("added token to the offset mapper");
             }
             mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
             bw.newLine();
@@ -177,14 +177,6 @@ public class Indexer {
         gos.finish();
 
         if (lastRound) {
-//            int count = 0;
-//            for (var entry : tokenOffsets.entrySet()) {
-//                LOGGER.info("token offset: " + entry.getValue());
-//                count ++;
-//                if (count > 100) {
-//                    break;
-//                }
-//            }
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
