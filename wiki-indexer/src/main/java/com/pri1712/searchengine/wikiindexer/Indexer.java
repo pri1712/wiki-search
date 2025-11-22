@@ -1,13 +1,18 @@
 package com.pri1712.searchengine.wikiindexer;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.pri1712.searchengine.wikiutils.CountingOutputStream;
+import com.pri1712.searchengine.wikiindexer.compression.IndexCompression;
 import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikitokenizer.TokenizedData;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,15 +28,22 @@ import java.util.zip.GZIPOutputStream;
 
 public class Indexer {
     private static Logger LOGGER = Logger.getLogger(String.valueOf(Indexer.class));
+
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+
     private static int indexFileCounter = 0;
-    private static final int MAX_IN_MEMORY_LENGTH = 10000;
-    private BatchFileWriter batchFileWriter;
-    Map<String, Map<Integer,Integer>> invertedIndex = new TreeMap<>();
+
     private static final int MAX_FILE_STREAM = 10;
-//    int temp_counter = 0;
-    public Indexer(String indexedFilePath) {
+    private static final int MAX_IN_MEMORY_LENGTH = 10000;
+
+    private BatchFileWriter batchFileWriter;
+
+    Map<String, Map<Integer,Integer>>  invertedIndex = new TreeMap<>();
+
+    IndexCompression compressor = new IndexCompression();
+
+    public Indexer(String indexedFilePath) throws IOException {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
         //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
         // if we wanna have memory based flushing
@@ -43,6 +55,7 @@ public class Indexer {
         try (Stream<Path> fileStream = Files.list(tokenizedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
             fileStream.forEach(file -> {
                 try {
+                  // start computing the inverted index (freq+docID per term)
                     addToIndex(file);
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, "Error indexing file: " + file, e);
@@ -54,39 +67,55 @@ public class Indexer {
     }
 
     //merge all the created inverted indexes.
-    public void mergeAllIndexes(String filePath) throws IOException {
-        Path indexedPath = Paths.get(filePath);
+    public void mergeAllIndexes(String indexFilePath) throws IOException {
+        Path indexedPath = Paths.get(indexFilePath);
+        Path tokenIndexOutputPath = indexedPath.resolve(String.format("token_index_offset.json.gz"));
+
         int indexRound = 0;
         List<Path> indexFiles = Files.list(indexedPath)
                 .filter(p -> {
                     String name = p.getFileName().toString();
-                    return name.endsWith(".json.gz") && !name.startsWith("merged_");
+                    return name.endsWith(".json.gz") && !name.startsWith("merged_") && !name.startsWith("token_");
                 }).sorted().toList();
         //create a list of all the index files.
         while (indexFiles.size() > 1) {
             //till we have only one index file (final inverted index)
-            LOGGER.log(Level.INFO,"index files size: {0}", indexFiles.size());
+            LOGGER.log(Level.FINE,"index files size: {0}", indexFiles.size());
             List<Path> nextRoundIndexes = new ArrayList<>();
             for (int i =0; i<indexFiles.size(); i+=MAX_FILE_STREAM) {
                 List<Path> batch = indexFiles.subList(i, Math.min(i+MAX_FILE_STREAM, indexFiles.size()));
                 Path outputPath = indexedPath.resolve(String.format("merged_index%d_%03d.json.gz", indexRound, i / MAX_FILE_STREAM));
-                LOGGER.info("Starting to merge indexed files; round " + indexRound);
-                mergeBatch(batch, outputPath);
+                LOGGER.fine("Starting to merge indexed files; round " + indexRound);
+                if (indexFiles.size() > MAX_FILE_STREAM){
+                    mergeBatch(batch, outputPath);
+                } else {
+                    mergeBatch(batch, outputPath);
+                }
                 nextRoundIndexes.add(outputPath);
                 for (Path p : batch) Files.deleteIfExists(p);
             }
             indexFiles = nextRoundIndexes;
             indexRound++;
         }
+        LOGGER.info("Indexed all data.");
+        //delta encoding on final inverted index.
+        compressor.deltaEncode(indexFiles.get(0),tokenIndexOutputPath);
 
     }
 
-    private void mergeBatch(List<Path> batch, Path outputPath) throws IOException {
+    private void mergeBatch(List<Path> batch, Path outputIndexPath) throws IOException {
         //actual file merging logic.
+        long byteOffset = 0;
+        FileOutputStream fos = new FileOutputStream(outputIndexPath.toFile());
+        GZIPOutputStream gos = new GZIPOutputStream(fos);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos, StandardCharsets.UTF_8));
+        //null countingoutputstream
+
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
         List<HeapEntry> entries = new ArrayList<>();
+        LOGGER.fine("Batch size is " + batch.size());
+        //basically read the first element of all the files part of batch.
         for (Path p : batch) {
-            //basically read the first element of all the files part of batch.
             BufferedReader br;
             try {
                 FileInputStream fis = new FileInputStream(p.toFile());
@@ -107,22 +136,28 @@ public class Indexer {
                 LOGGER.log(Level.SEVERE, "Error reading file " + p, e);
             }
         }
-//        LOGGER.info("Processing " + entries.size() + " entries");
         heap.addAll(entries);
-//        LOGGER.info("Creating a gzip o/p stream");
-        GZIPOutputStream gos  = new GZIPOutputStream(new FileOutputStream(outputPath.toFile()));
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
+
         while (!heap.isEmpty()) {
             HeapEntry heapEntry = heap.poll();
             //now find all the ones with the same token.
             String token = heapEntry.token;
             Map<Integer,Integer> docFreqMap = new HashMap<>(heapEntry.docFreq);
             while (!heap.isEmpty() && heap.peek().token.equals(token)) {
+              //finding all the entries with the same token.
                 HeapEntry matchingEntry = heap.poll();
                 matchingEntry.docFreq.forEach((doc, freq) -> docFreqMap.merge(doc, freq, Integer::sum));
                 nextLine(matchingEntry,heap,mapper);
             }
-            mapper.writeValue(bw, Map.of(token,docFreqMap));
+            //sorting doc ID by key for delta encoding.
+            List<Map.Entry<Integer, Integer>> sortedEntries = new ArrayList<>(docFreqMap.entrySet());
+            sortedEntries.sort(Map.Entry.comparingByKey());
+
+            Map<Integer, Integer> sortedDocFreqMap = new LinkedHashMap<>();
+            for (var e : sortedEntries) {
+              sortedDocFreqMap.put(e.getKey(), e.getValue());
+            }
+            mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
             bw.newLine();
             nextLine(heapEntry,heap,mapper);
         }
@@ -161,14 +196,17 @@ public class Indexer {
             for (TokenizedData document : tokenizedDocuments) {
                 //process each json file of title,text,doc id here separately and add to index.
                 addDocument(document);
-                boolean flush = flushToDisk();
-                if (flush) {
+                long preUsedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024); //used mem in MB
+                if (shouldFlush()) {
                     LOGGER.info("Flushing to disk");
                     batchFileWriter.writeIndex(invertedIndex,indexFileCounter);
                     invertedIndex.clear();
                     indexFileCounter++;
-                    return;
+                  long postUsedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+                  LOGGER.info(String.format("Memory before flushing to disk was %d and after flushing it was %d",preUsedMemory,postUsedMemory));
+                  return;
                 }
+
             }
 
         } catch (IOException e) {
@@ -194,11 +232,9 @@ public class Indexer {
 
     }
 
-    private boolean flushToDisk() {
+    private boolean shouldFlush() {
         //deciding whether to flush to disk or not.
         return invertedIndex.size() >= MAX_IN_MEMORY_LENGTH; //very rudimentary check, use heap size later
     }
-
-
 
 }
