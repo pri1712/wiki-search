@@ -1,11 +1,14 @@
 package com.pri1712.searchengine.wikiindexer.compression;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pri1712.searchengine.wikiutils.CountingOutputStream;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -20,14 +23,20 @@ import java.util.zip.GZIPOutputStream;
 public class IndexCompression {
 
     private static Logger LOGGER = Logger.getLogger(IndexCompression.class.getName());
-    public IndexCompression() {}
-    ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
-            .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);;
 
-    public void deltaEncode(Path inputFilePath) {
+    public IndexCompression() throws IOException {}
+    ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+            .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+    CountingOutputStream counter = new CountingOutputStream();
+    JsonGenerator gen = mapper.getFactory().createGenerator(counter, JsonEncoding.UTF8);
+
+    public void deltaEncode(Path inputFilePath, Path tokenIndexOffsetPath) {
         Path outputFilePath = Paths.get(inputFilePath.getParent().toString(),
                 inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json.gz")
         );
+        long byteOffset = 0;
+        Map<String,Long> tokenOffsets = new LinkedHashMap<>();
+
         try (FileInputStream fis = new FileInputStream(inputFilePath.toFile())) {
             GZIPInputStream gis = new GZIPInputStream(fis);
             BufferedReader br = new BufferedReader(new InputStreamReader(gis));
@@ -50,12 +59,31 @@ public class IndexCompression {
                         deltaMap.put(delta, docFreqMap.get(currentDocID));
                         prevDocID = currentDocID;
                     }
+                    long before = counter.getCount();
+                    gen.writeObject(Map.of(token, deltaMap));
+                    gen.flush();
+                    long after = counter.getCount();
+                    long byteLength = after - before;
+                    tokenOffsets.put(token, byteOffset);
+                    byteOffset += byteLength + 1;
                     mapper.writeValue(bw, Map.of(token, deltaMap));
                     bw.newLine();
                 }
             }
             bw.flush();
             gos.close();
+            FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
+            GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
+            OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
+            for (Map.Entry<String,Long> entry : tokenOffsets.entrySet()) {
+                mapper.writeValue(osw, Map.of(entry.getKey(),entry.getValue()));
+                osw.write("\n");;
+            }
+            LOGGER.fine("Wrote token offsets to " + tokenIndexOffsetPath);
+            osw.flush();
+            osw.close();
+            gos2.finish();
+            gos2.close();
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Could not open input file " + inputFilePath.toString(), e);
         }

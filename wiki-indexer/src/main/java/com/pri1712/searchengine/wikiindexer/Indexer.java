@@ -28,16 +28,22 @@ import java.util.zip.GZIPOutputStream;
 
 public class Indexer {
     private static Logger LOGGER = Logger.getLogger(String.valueOf(Indexer.class));
+
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+
     private static int indexFileCounter = 0;
-    private static final int MAX_IN_MEMORY_LENGTH = 10000;
-    private BatchFileWriter batchFileWriter;
-    Map<String, Map<Integer,Integer>>  invertedIndex = new TreeMap<>();
+
     private static final int MAX_FILE_STREAM = 10;
+    private static final int MAX_IN_MEMORY_LENGTH = 10000;
+
+    private BatchFileWriter batchFileWriter;
+
+    Map<String, Map<Integer,Integer>>  invertedIndex = new TreeMap<>();
+
     IndexCompression compressor = new IndexCompression();
 
-    public Indexer(String indexedFilePath) {
+    public Indexer(String indexedFilePath) throws IOException {
         //figure out how to do checkpointing here, it cant be as simple as the parser and tokenizer.
         //maybe we can compare the number of lines processed but that is a very simple way to do it especially~
         // if we wanna have memory based flushing
@@ -63,6 +69,7 @@ public class Indexer {
     //merge all the created inverted indexes.
     public void mergeAllIndexes(String indexFilePath) throws IOException {
         Path indexedPath = Paths.get(indexFilePath);
+        Path tokenIndexOutputPath = indexedPath.resolve(String.format("token_index_offset.json.gz"));
 
         int indexRound = 0;
         List<Path> indexFiles = Files.list(indexedPath)
@@ -82,8 +89,7 @@ public class Indexer {
                 if (indexFiles.size() > MAX_FILE_STREAM){
                     mergeBatch(batch, outputPath);
                 } else {
-                    Path tokenIndexOutputPath = indexedPath.resolve(String.format("token_index_offset.json.gz"));
-                    mergeBatch(batch, outputPath, tokenIndexOutputPath,true);
+                    mergeBatch(batch, outputPath);
                 }
                 nextRoundIndexes.add(outputPath);
                 for (Path p : batch) Files.deleteIfExists(p);
@@ -92,25 +98,18 @@ public class Indexer {
             indexRound++;
         }
         LOGGER.info("Indexed all data.");
-
-        compressor.deltaEncode(indexFiles.get(0));
+        //delta encoding on final inverted index.
+        compressor.deltaEncode(indexFiles.get(0),tokenIndexOutputPath);
 
     }
 
     private void mergeBatch(List<Path> batch, Path outputIndexPath) throws IOException {
-        mergeBatch(batch, outputIndexPath, null, false);
-    }
-
-    private void mergeBatch(List<Path> batch, Path outputIndexPath, Path tokenIndexOffsetPath , boolean lastRound) throws IOException {
         //actual file merging logic.
         long byteOffset = 0;
         FileOutputStream fos = new FileOutputStream(outputIndexPath.toFile());
         GZIPOutputStream gos = new GZIPOutputStream(fos);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos, StandardCharsets.UTF_8));
         //null countingoutputstream
-        CountingOutputStream counter = new CountingOutputStream();
-        JsonGenerator gen = mapper.getFactory().createGenerator(counter, JsonEncoding.UTF8);
-        Map<String,Long> tokenOffsets = new LinkedHashMap<>();
 
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
         List<HeapEntry> entries = new ArrayList<>();
@@ -158,38 +157,12 @@ public class Indexer {
             for (var e : sortedEntries) {
               sortedDocFreqMap.put(e.getKey(), e.getValue());
             }
-            if (lastRound) {
-                //we are on the last merge of the indexing module.
-                long before = counter.getCount();
-                gen.writeObject(Map.of(token, sortedDocFreqMap));
-                gen.flush();
-                long after = counter.getCount();
-                long byteLength = after - before;
-                tokenOffsets.put(token, byteOffset);
-                byteOffset += byteLength + 1;
-//                LOGGER.fine("added token to the offset mapper");
-            }
             mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
             bw.newLine();
             nextLine(heapEntry,heap,mapper);
         }
         bw.flush();
         gos.finish();
-
-        if (lastRound) {
-            FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
-            GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
-            OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
-            for (Map.Entry<String,Long> entry : tokenOffsets.entrySet()) {
-                mapper.writeValue(osw, Map.of(entry.getKey(),entry.getValue()));
-                osw.write("\n");;
-            }
-            LOGGER.fine("Wrote token offsets to " + tokenIndexOffsetPath);
-            osw.flush();
-            osw.close();
-            gos2.finish();
-            gos2.close();
-        }
     }
 
     private void nextLine(HeapEntry heapEntry, PriorityQueue<HeapEntry> heap, ObjectMapper mapper) throws IOException {
