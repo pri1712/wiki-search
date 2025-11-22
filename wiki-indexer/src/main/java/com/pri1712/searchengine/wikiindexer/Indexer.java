@@ -1,14 +1,15 @@
 package com.pri1712.searchengine.wikiindexer;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.pri1712.searchengine.wikiutils.CountingOutputStream;
 import com.pri1712.searchengine.wikiindexer.compression.IndexCompression;
 import com.pri1712.searchengine.wikiutils.BatchFileWriter;
 import com.pri1712.searchengine.wikitokenizer.TokenizedData;
-import org.apache.commons.io.output.CountingOutputStream;
-import org.apache.commons.lang3.ObjectUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -102,24 +103,20 @@ public class Indexer {
 
     private void mergeBatch(List<Path> batch, Path outputIndexPath, Path tokenIndexOffsetPath , boolean lastRound) throws IOException {
         //actual file merging logic.
+        long byteOffset = 0;
         FileOutputStream fos = new FileOutputStream(outputIndexPath.toFile());
-        CountingOutputStream cos = null;
-        GZIPOutputStream gos = null;
-        if (lastRound) {
-            cos = new CountingOutputStream(fos);
-            gos = new GZIPOutputStream(cos);
-        }
-        else {
-            gos = new GZIPOutputStream(fos);
-        }
+        GZIPOutputStream gos = new GZIPOutputStream(fos);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos, StandardCharsets.UTF_8));
+        //null countingoutputstream
+        CountingOutputStream counter = new CountingOutputStream();
+        JsonGenerator gen = mapper.getFactory().createGenerator(counter, JsonEncoding.UTF8);
         Map<String,Long> tokenOffsets = new LinkedHashMap<>();
 
         PriorityQueue<HeapEntry> heap = new PriorityQueue<>(Comparator.comparing(heapEntry -> heapEntry.token));
         List<HeapEntry> entries = new ArrayList<>();
         LOGGER.fine("Batch size is " + batch.size());
+        //basically read the first element of all the files part of batch.
         for (Path p : batch) {
-            //basically read the first element of all the files part of batch.
             BufferedReader br;
             try {
                 FileInputStream fis = new FileInputStream(p.toFile());
@@ -161,13 +158,15 @@ public class Indexer {
             for (var e : sortedEntries) {
               sortedDocFreqMap.put(e.getKey(), e.getValue());
             }
-            bw.flush();
-            gos.flush();
             if (lastRound) {
                 //we are on the last merge of the indexing module.
-                long byteOffset = cos.getByteCount();
+                //the issue is happening here itself, due to the block based flush nature of the streams.
+                gen.writeObject(Map.of(token, sortedDocFreqMap));
+                gen.flush();
+                long jsonBytesLength = counter.getCount();
                 LOGGER.info("token offset:" + byteOffset);
                 tokenOffsets.put(token, byteOffset);
+                byteOffset += jsonBytesLength + 1;
                 LOGGER.fine("added token to the offset mapper");
             }
             mapper.writeValue(bw, Map.of(token,sortedDocFreqMap));
