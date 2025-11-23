@@ -41,8 +41,8 @@ public class IndexCompression {
         try (FileInputStream fis = new FileInputStream(inputFilePath.toFile())) {
             GZIPInputStream gis = new GZIPInputStream(fis);
             BufferedReader br = new BufferedReader(new InputStreamReader(gis));
-            GZIPOutputStream gos  = new GZIPOutputStream(new FileOutputStream(outputFilePath.toFile()));
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(gos));
+            FileOutputStream fos = new FileOutputStream(outputFilePath.toFile());
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
             String line;
             while ((line = br.readLine()) != null){
                 Map<String, Map<Integer,Integer>> index = mapper.readValue(line, new TypeReference<>() {});
@@ -72,7 +72,6 @@ public class IndexCompression {
                 }
             }
             bw.flush();
-            gos.close();
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);

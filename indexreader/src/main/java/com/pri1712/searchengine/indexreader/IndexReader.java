@@ -3,12 +3,14 @@ package com.pri1712.searchengine.indexreader;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pri1712.searchengine.indexreader.decompression.IndexDecompression;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ public class IndexReader {
     private final Map<String,Long> tokenOffsetMap;
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+    IndexDecompression indexDecompression = new IndexDecompression();
 
     public IndexReader(String indexedFilePath,String indexTokenOffsetFilePath) {
         this.indexedFilePath = Paths.get(indexedFilePath);
@@ -48,13 +51,18 @@ public class IndexReader {
     }
     public void readTokenIndex(String token) throws IOException {
         Long tokenOffset = tokenOffsetMap.get(token);
-        LOGGER.log(Level.INFO,"tokenOffset:"+tokenOffset);
+        List<Long> tokenOffsets = new ArrayList<>();
+        tokenOffsets.add(tokenOffset);
+        indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
     }
 
     public void readTokenIndex(List<String> tokens) throws IOException {
+        List<Long> tokenOffsets = new ArrayList<>();
         for (String token : tokens) {
             Long tokenOffset = tokenOffsetMap.get(token);
+            tokenOffsets.add(tokenOffset);
         }
+        indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
     }
 
 }
