@@ -4,6 +4,7 @@ import com.pri1712.searchengine.wikiparser.Parser;
 import com.pri1712.searchengine.wikitokenizer.Tokenizer;
 import com.pri1712.searchengine.wikiindexer.Indexer;
 
+import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -14,9 +15,12 @@ public class Main {
     private static final String PARSED_FILE_PATH = "data/parsed-data/";
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     private static final String INDEXED_FILE_PATH = "data/inverted-index/";
+    private static final String TOKEN_INDEX_OFFSET_PATH = "data/inverted-index/token_index_offset.json.gz";
+
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
+    static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -52,10 +56,10 @@ public class Main {
         }
 
         //querying is the next step.
-//        try {
-//            Indexer indexer = new Indexer(indexedFilePath);
-//            indexer.
-//        } catch ()
+        try {
+            Indexer indexer = new Indexer(indexedFilePath,tokenIndexOffsetPath);
+            indexer.
+        } catch ()
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
