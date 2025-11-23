@@ -3,6 +3,7 @@ package com.pri1712.searchengine.wikisearchApp;
 import com.pri1712.searchengine.wikiparser.Parser;
 import com.pri1712.searchengine.wikitokenizer.Tokenizer;
 import com.pri1712.searchengine.wikiindexer.Indexer;
+import com.pri1712.searchengine.wikiindexReader.IndexReader;
 
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.io.IOException;
@@ -16,7 +17,7 @@ public class Main {
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     private static final String INDEXED_FILE_PATH = "data/inverted-index/";
     private static final String TOKEN_INDEX_OFFSET_PATH = "data/inverted-index/token_index_offset.json.gz";
-
+    private static final String TEST_TOKEN = "aa";
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
@@ -57,9 +58,12 @@ public class Main {
 
         //querying is the next step.
         try {
-            Indexer indexer = new Indexer(indexedFilePath,tokenIndexOffsetPath);
-            indexer.
-        } catch ()
+            IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
+            indexReader.readTokenIndex(TEST_TOKEN);
+        } catch (RuntimeException | IOException e) {
+            LOGGER.log(Level.WARNING, e.getMessage());
+            throw new RuntimeException(e);
+        }
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
