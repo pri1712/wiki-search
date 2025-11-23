@@ -14,7 +14,6 @@ public class Main {
     private static final String PARSED_FILE_PATH = "data/parsed-data/";
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     private static final String INDEXED_FILE_PATH = "data/inverted-index/";
-
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
@@ -51,6 +50,12 @@ public class Main {
         } catch (RuntimeException | IOException e) {
             throw new RuntimeException(e);
         }
+
+        //querying is the next step.
+//        try {
+//            Indexer indexer = new Indexer(indexedFilePath);
+//            indexer.
+//        } catch ()
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
