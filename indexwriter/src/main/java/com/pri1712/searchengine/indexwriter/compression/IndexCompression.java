@@ -33,7 +33,7 @@ public class IndexCompression {
 
     public void deltaEncode(Path inputFilePath, Path tokenIndexOffsetPath) {
         Path outputFilePath = Paths.get(inputFilePath.getParent().toString(),
-                inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json.gz")
+                inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json")
         );
         long byteOffset = 0;
         Map<String,Long> tokenOffsets = new LinkedHashMap<>();

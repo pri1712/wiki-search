@@ -7,6 +7,7 @@ import com.pri1712.searchengine.indexreader.decompression.IndexDecompression;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -21,7 +22,7 @@ import java.util.zip.GZIPInputStream;
 
 public class IndexReader {
     private static final Logger LOGGER = Logger.getLogger(String.valueOf(IndexReader.class));
-    private final Path indexedFilePath;
+    private Path indexedFilePath;
     private final Path  indexTokenOffsetFilePath;
     private final Map<String,Long> tokenOffsetMap;
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
@@ -29,7 +30,15 @@ public class IndexReader {
     IndexDecompression indexDecompression = new IndexDecompression();
 
     public IndexReader(String indexedFilePath,String indexTokenOffsetFilePath) {
-        this.indexedFilePath = Paths.get(indexedFilePath);
+        Path dir = Paths.get(indexedFilePath);
+        try {
+            this.indexedFilePath = Files.list(dir)
+                    .filter(p -> p.getFileName().toString().endsWith("_delta_encoded.json"))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("no inverted index found"));
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+        }
         this.indexTokenOffsetFilePath = Paths.get(indexTokenOffsetFilePath);
         tokenOffsetMap = new HashMap<>();
         try {
