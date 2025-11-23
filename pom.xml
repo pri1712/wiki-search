@@ -15,6 +15,7 @@
         <module>wiki-searchApp</module>
         <module>wiki-tokenizer</module>
         <module>wiki-indexer</module>
+        <module>wiki-indexreader</module>
     </modules>
 
     <properties>
