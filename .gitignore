@@ -1,10 +1,9 @@
-wiki-indexer/target
-wiki-parser/target
-wiki-searchApp/target
-wiki-tokenizer/target
-wiki-utils/target
+**/target
 enwiki-latest-pages-articles.xml.bz2
 wiki-search-obsidian
+parserCheckpoint.txt
+tokenizerCheckpoint.txt
+**/**.iml
 data/
 out/
 .idea

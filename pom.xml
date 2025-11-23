@@ -10,12 +10,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>wiki-parser</module>
-        <module>wiki-utils</module>
-        <module>wiki-searchApp</module>
-        <module>wiki-tokenizer</module>
-        <module>wiki-indexer</module>
-        <module>wiki-indexreader</module>
+        <module>parser</module>
+        <module>utils</module>
+        <module>searchCore</module>
+        <module>tokenizer</module>
+        <module>indexwriter</module>
+        <module>indexreader</module>
     </modules>
 
     <properties>
