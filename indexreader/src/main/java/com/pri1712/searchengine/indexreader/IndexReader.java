@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +49,12 @@ public class IndexReader {
     public void readTokenIndex(String token) throws IOException {
         Long tokenOffset = tokenOffsetMap.get(token);
         LOGGER.log(Level.INFO,"tokenOffset:"+tokenOffset);
+    }
+
+    public void readTokenIndex(List<String> tokens) throws IOException {
+        for (String token : tokens) {
+            Long tokenOffset = tokenOffsetMap.get(token);
+        }
     }
 
 }
