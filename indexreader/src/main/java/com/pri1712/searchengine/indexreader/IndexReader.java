@@ -63,6 +63,7 @@ public class IndexReader {
         List<Long> tokenOffsets = new ArrayList<>();
         tokenOffsets.add(tokenOffset);
         List<Map<Integer,Integer>> decompressedPostingList = indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
+        LOGGER.info("decompressed posting list: " + decompressedPostingList);
         LOGGER.info("Decompressed posting list size: " + decompressedPostingList.size());
     }
 
