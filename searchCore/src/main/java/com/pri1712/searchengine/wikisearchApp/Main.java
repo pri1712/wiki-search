@@ -1,5 +1,6 @@
 package com.pri1712.searchengine.wikisearchApp;
 
+import com.pri1712.searchengine.indexreader.IndexData;
 import com.pri1712.searchengine.parser.Parser;
 import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;
@@ -16,7 +17,7 @@ public class Main {
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     private static final String INDEXED_FILE_PATH = "data/inverted-index/";
     private static final String TOKEN_INDEX_OFFSET_PATH = "data/inverted-index/token_index_offset.json.gz";
-    private static final String TEST_TOKEN = "abensprech";
+    private static final String TEST_TOKEN = "drill";
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
@@ -58,7 +59,10 @@ public class Main {
         //querying is the next step.
         try {
             IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
-            indexReader.readTokenIndex(TEST_TOKEN);
+            IndexData indexData = indexReader.readTokenIndex(TEST_TOKEN);
+            LOGGER.fine("Read data from inverted index for token " + TEST_TOKEN);
+            LOGGER.fine("DocIds " + indexData.getDocIds());
+            LOGGER.fine("frequencies " + indexData.getFreqs());
         } catch (RuntimeException | IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             throw new RuntimeException(e);
