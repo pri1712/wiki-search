@@ -34,7 +34,6 @@ public class IndexDecompression {
             }
             indexRAF.seek(offset);
             String decodedLine = decodeUTF8(indexRAF);
-            decodedLine = "{" + decodedLine;
             LOGGER.info(decodedLine);
 
             if (decodedLine==null || decodedLine.isEmpty()) {
