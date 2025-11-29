@@ -1,0 +1,9 @@
+**/target
+enwiki-latest-pages-articles.xml.bz2
+wiki-search-obsidian
+parserCheckpoint.txt
+tokenizerCheckpoint.txt
+**/**.iml
+data/
+out/
+.idea
