@@ -29,17 +29,23 @@ public class Tokenizer {
     private final CheckpointManager checkpointManager = new CheckpointManager(tokenizerBatchCheckpointFile);
     private final BatchFileWriter batchFileWriter = new BatchFileWriter("data/tokenized-data/");
     private List<TokenizedData> totalTokenizedData = new ArrayList<>();
-
-    public Tokenizer() throws RuntimeException {
+    private final String parsedFilePath;
+    private final String docStatsPath;
+    private long averageDocLength;
+    private long numberOfDocuments;
+    public Tokenizer(String parsedFilePath, String docStatsPath) throws RuntimeException {
         this.previousTokenizerBatchCounter = checkpointManager.readCheckpointBatch();
+        this.parsedFilePath = parsedFilePath;
+        this.docStatsPath = docStatsPath;
     }
 
-    public void tokenizeData(String parsedFilePath) {
+    public void tokenizeData() {
         Path parsedPath = Paths.get(parsedFilePath);
+        Path docStatPath = Paths.get(docStatsPath);
         try (Stream<Path> fileStream = Files.list(parsedPath).filter(f -> f.toString().endsWith(".json.gz"))) {
-            fileStream.forEach(file -> {
+            fileStream.forEach(parsedFile -> {
                 try {
-                   processFile(file);
+                   processFile(parsedFile);
                 } catch (IOException e) {
                     LOGGER.log(Level.SEVERE,"IO exception while reading compressed json files",e);
                 }
@@ -61,8 +67,12 @@ public class Tokenizer {
             for (WikiDocument wikiDocument : jsonDocuments) {
 //                System.out.printf("Title of the document is: %s %n", wikiDocument.getTitle());
                 //normalize then tokenize.
+                long docLength = 0;
                 WikiDocument normalizedDocument =  tokenNormalizer.normalizeData(wikiDocument);
                 TokenizedData tokenizedText = tokenNormalizer.tokenizeText(normalizedDocument); //tokenizedText now has the tokenized title and text for the document.
+                docLength += tokenizedText.getLengthTokenizedText() + tokenizedText.getLengthTokenizedTitle();
+                averageDocLength += docLength;
+                numberOfDocuments++;
                 totalTokenizedData.add(tokenizedText);
             }
             List<TokenizedData> newTokenizedData = new ArrayList<>(totalTokenizedData);

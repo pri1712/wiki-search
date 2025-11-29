@@ -25,12 +25,20 @@ public class TokenizedData {
         return tokenizedText;
     }
 
+    public long getLengthTokenizedText() {
+        return tokenizedText.size();
+    }
+
     public void setTokenizedText(List<String> tokenizedText) {
         this.tokenizedText = tokenizedText;
     }
 
     public List<String> getTokenizedTitle() {
         return tokenizedTitle;
+    }
+
+    public long getLengthTokenizedTitle() {
+        return tokenizedTitle.size();
     }
 
     public void setTokenizedTitle(List<String> tokenizedTitle) {

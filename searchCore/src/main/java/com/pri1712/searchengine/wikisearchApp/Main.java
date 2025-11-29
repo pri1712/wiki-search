@@ -16,11 +16,14 @@ public class Main {
     private static final String TOKENIZED_FILE_PATH = "data/tokenized-data/";
     private static final String INDEXED_FILE_PATH = "data/inverted-index/";
     private static final String TOKEN_INDEX_OFFSET_PATH = "data/inverted-index/token_index_offset.json.gz";
+    private static final String DOC_STATS_PATH = "data/doc-stats/";
+
     private static final String TEST_TOKEN = "aaaaamaaj";
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
     static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
+    static String docStatsPath = DOC_STATS_PATH;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -37,9 +40,9 @@ public class Main {
         }
         //tokenizer
         try {
-            Tokenizer tokenizer = new Tokenizer();
+            Tokenizer tokenizer = new Tokenizer(parsedFilePath,docStatsPath);
             LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
-            tokenizer.tokenizeData(parsedFilePath);
+            tokenizer.tokenizeData();
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
