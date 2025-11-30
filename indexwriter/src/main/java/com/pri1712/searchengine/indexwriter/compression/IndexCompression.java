@@ -32,18 +32,17 @@ public class IndexCompression {
     JsonGenerator gen = mapper.getFactory().createGenerator(counter, JsonEncoding.UTF8);
 
     public void deltaEncode(Path inputFilePath, Path tokenIndexOffsetPath) {
-        LOGGER.log(Level.INFO,"deltaEncode");
         Path outputFilePath = Paths.get(inputFilePath.getParent().toString(),
-                inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json.gz")
+                inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json")
         );
         long byteOffset = 0;
         Map<String,Long> tokenOffsets = new LinkedHashMap<>();
 
         try (FileInputStream fis = new FileInputStream(inputFilePath.toFile())) {
             GZIPInputStream gis = new GZIPInputStream(fis);
-            BufferedReader br = new BufferedReader(new InputStreamReader(gis));
+            BufferedReader br = new BufferedReader(new InputStreamReader(gis,StandardCharsets.UTF_8));
             FileOutputStream fos = new FileOutputStream(outputFilePath.toFile());
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
             String line;
             while ((line = br.readLine()) != null){
                 Map<String, Map<Integer,Integer>> index = mapper.readValue(line, new TypeReference<>() {});
@@ -61,18 +60,13 @@ public class IndexCompression {
                         deltaMap.put(delta, docFreqMap.get(currentDocID));
                         prevDocID = currentDocID;
                     }
-                    long before = counter.getCount();
-                    gen.writeObject(Map.of(token, deltaMap));
-                    gen.flush();
-                    long after = counter.getCount();
-                    long byteLength = after - before;
+                    byte[] jsonBytes = mapper.writeValueAsBytes(Map.of(token,deltaMap));
                     tokenOffsets.put(token, byteOffset);
-                    byteOffset += byteLength + 1;
-                    mapper.writeValue(bw, Map.of(token, deltaMap));
-                    bw.newLine();
+                    bos.write(jsonBytes);
+                    bos.write('\n');
+                    byteOffset += jsonBytes.length + 1L;
                 }
             }
-            bw.flush();
             FileOutputStream offsetOutputStream = new FileOutputStream(tokenIndexOffsetPath.toFile());
             GZIPOutputStream gos2 = new GZIPOutputStream(offsetOutputStream);
             OutputStreamWriter osw = new OutputStreamWriter(gos2, StandardCharsets.UTF_8);
