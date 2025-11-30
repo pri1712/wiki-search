@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.pri1712.searchengine.indexwriter.compression.IndexCompression;
 import com.pri1712.searchengine.utils.BatchFileWriter;
-import com.pri1712.searchengine.tokenizer.TokenizedData;
+import com.pri1712.searchengine.model.TokenizedData;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

@@ -29,5 +29,6 @@ public class QueryEngine {
     public void preprocessQuery(String line) throws IOException {
         List<String> tokens = Arrays.asList(line.split(" "));
         LOGGER.info("tokens: " + tokens);
+
     }
 }
