@@ -17,6 +17,7 @@
         <module>indexwriter</module>
         <module>indexreader</module>
         <module>queryCore</module>
+        <module>modelCore</module>
     </modules>
 
     <properties>
@@ -43,6 +44,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.18.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.20</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

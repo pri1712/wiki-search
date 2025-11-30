@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.logging.*;
 
 import com.pri1712.searchengine.utils.BatchFileWriter;
-import com.pri1712.searchengine.utils.NormalizeText;
+import com.pri1712.searchengine.utils.TextUtils;
 import com.pri1712.searchengine.utils.WikiDocument;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -22,7 +22,7 @@ public class Parser {
     private static final Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
     private static final int MAX_BATCH_SIZE = 10;
-    private static final int MAX_DOCS_TO_PROCESS = 500;
+    private static final int MAX_DOCS_TO_PROCESS = 5000;
     private String XmlFilePath;
     private FileInputStream fis;
     private int docCounter = 0;
@@ -120,9 +120,8 @@ public class Parser {
                                 break;
                             case "page":
                                 //reached the end of the page.
-                                NormalizeText normalizeText = new NormalizeText();
-                                StringBuilder cleanText = normalizeText.lowerCaseText(textBuilder);
-                                StringBuilder cleanTitle = normalizeText.lowerCaseText(titleBuilder);
+                                StringBuilder cleanText = TextUtils.lowerCaseText(textBuilder);
+                                StringBuilder cleanTitle = TextUtils.lowerCaseText(titleBuilder);
                                 //normalize and clean up title and text.
 //                              LOGGER.log(Level.INFO,"Clean text length: {0}", cleanText.length());
                                 if (cleanText.isEmpty()) {

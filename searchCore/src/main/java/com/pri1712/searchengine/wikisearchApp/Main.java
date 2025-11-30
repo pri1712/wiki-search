@@ -5,6 +5,7 @@ import com.pri1712.searchengine.parser.Parser;
 import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;
 import com.pri1712.searchengine.indexreader.IndexReader;
+import com.pri1712.searchengine.wikiquerying.QueryEngine;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -12,9 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +33,7 @@ public class Main {
     static String docStatsPath = DOC_STATS_PATH;
 
     public static void main(String[] args) throws IOException {
-        long startTime = System.nanoTime();
+        long startTime = getStartTime();
         Map<String,String> parsedArgs = parseArgs(args);
         String mode = parsedArgs.getOrDefault("mode", "read");
         String dataPath = parsedArgs.get("data");
@@ -48,13 +47,18 @@ public class Main {
             try {
                 LOGGER.info("Shutting down, closing index reader...");
                 indexReader.close();
+                long endTime = getEndTime();
+                long elapsedTime = endTime - startTime;
+                LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
+                LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
+
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed closing index reader", e);
             }
         }));
 
         runReadPipeline(indexReader,indexedFilePath);
-        long endTime = System.nanoTime();
+        long endTime = getEndTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
         LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
@@ -106,7 +110,9 @@ public class Main {
                 if (!scanner.hasNextLine()) break;
                 String line = scanner.nextLine().trim();
                 if (line.isEmpty()) continue;
-                if (line.equalsIgnoreCase(":exit")) break;
+                if (line.equalsIgnoreCase(":exit")){
+                    return;
+                }
 
                 if (line.equalsIgnoreCase(":reload")) {
                     try {
@@ -119,10 +125,10 @@ public class Main {
                     continue;
                 }
                 try {
-                    IndexData data = indexReader.readTokenIndex(line);
-                    System.out.println("DocIds: " + data.getDocIds());
-                    System.out.println("Freqs:  " + data.getFreqs());
-                } catch (Exception e) {
+                    QueryEngine queryEngine = new QueryEngine(indexedFilePath,docStatsPath,tokenizedFilePath);
+                    queryEngine.preprocessQuery(line);
+
+                } catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Query failed", e);
                     System.out.println("Query error: " + e.getMessage());
                 }
@@ -138,5 +144,13 @@ public class Main {
         Path indexedPath = Paths.get(indexPath);
         LOGGER.info("Opening index at " + indexedPath.toAbsolutePath());
         return new IndexReader(indexedPath.toString(),tokenIndexOffsetPath);
+    }
+
+    private static long getStartTime() {
+        return System.nanoTime();
+    }
+
+    private static long getEndTime() {
+        return System.nanoTime();
     }
 }

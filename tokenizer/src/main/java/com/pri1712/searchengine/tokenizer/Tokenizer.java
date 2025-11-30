@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pri1712.searchengine.utils.BatchFileWriter;
 import com.pri1712.searchengine.parser.CheckpointManager;
 import com.pri1712.searchengine.utils.WikiDocument;
+import com.pri1712.searchengine.utils.TextUtils;
+import com.pri1712.searchengine.model.TokenizedData;
 
 public class Tokenizer {
     private static final int MAX_BATCH_SIZE = 1;
@@ -27,7 +29,6 @@ public class Tokenizer {
     private static final Logger LOGGER = Logger.getLogger(Tokenizer.class.getName());
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
-    TokenNormalizer tokenNormalizer = new TokenNormalizer();
     private int tokenizerBatchCounter = 0;
     private int previousTokenizerBatchCounter;
     private final String tokenizerBatchCheckpointFile = "tokenizerCheckpoint.txt";
@@ -84,7 +85,7 @@ public class Tokenizer {
             List<WikiDocument> jsonDocuments = mapper.readValue(buffRead, new TypeReference<>() {
             });
             for (WikiDocument wikiDocument : jsonDocuments) {
-                TokenizedData tokenizedText = tokenNormalizer.tokenizeText(tokenNormalizer.normalizeData(wikiDocument));
+                TokenizedData tokenizedText = TextUtils.tokenizeDocument(TextUtils.normalizeDocument(wikiDocument));
                 long docLength = tokenizedText.getLengthTokenizedText() + tokenizedText.getLengthTokenizedTitle();
                 perDocLengths.put(wikiDocument.getId(), docLength);
                 averageDocLength += docLength;

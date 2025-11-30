@@ -1,4 +1,4 @@
-package com.pri1712.searchengine.tokenizer;
+package com.pri1712.searchengine.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
