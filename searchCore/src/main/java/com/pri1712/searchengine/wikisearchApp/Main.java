@@ -12,9 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -119,9 +117,12 @@ public class Main {
                     continue;
                 }
                 try {
-                    IndexData data = indexReader.readTokenIndex(line);
-                    System.out.println("DocIds: " + data.getDocIds());
-                    System.out.println("Freqs:  " + data.getFreqs());
+                    List<String> words = Arrays.asList(line.split(" "));
+                    List<IndexData> indexData = indexReader.readTokenIndex(words);
+                    for (IndexData data : indexData) {
+                        LOGGER.info("docIds: " + data.getDocIds());
+                        LOGGER.info("frequencies:" + data.getFreqs());
+                    }
                 } catch (Exception e) {
                     LOGGER.log(Level.WARNING, "Query failed", e);
                     System.out.println("Query error: " + e.getMessage());

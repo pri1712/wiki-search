@@ -59,27 +59,39 @@ public class IndexReader {
     public IndexData readTokenIndex(String token) throws IOException {
         Long tokenOffset = tokenOffsetMap.get(token);
         List<Long> tokenOffsets = new ArrayList<>();
-        tokenOffsets.add(tokenOffset);
+        addTokenOffset(tokenOffset,tokenOffsets);
         List<Map<Integer,Integer>> decompressedPostingList = indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
         LOGGER.info("decompressed posting list: " + decompressedPostingList);
         LOGGER.info("Decompressed posting list size: " + decompressedPostingList.size());
         Map<Integer,Integer> postingMap = decompressedPostingList.get(0);
-        int i = 0;
         for (var entry : postingMap.entrySet()) {
             docIds.add(entry.getKey());
             freqs.add(entry.getValue());
-            i++;
         }
         return new IndexData(docIds,freqs);
     }
 
-    public void readTokenIndex(List<String> tokens) throws IOException {
+    public List<IndexData> readTokenIndex(List<String> tokens) throws IOException {
+        List<IndexData> indexDataList = new ArrayList<>();
         List<Long> tokenOffsets = new ArrayList<>();
         for (String token : tokens) {
+            LOGGER.info("token: " + token);
             Long tokenOffset = tokenOffsetMap.get(token);
-            tokenOffsets.add(tokenOffset);
+            addTokenOffset(tokenOffset,tokenOffsets);
+            List<Map<Integer,Integer>> decompressedPostingList = indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
+            LOGGER.info("decompressed posting list: " + decompressedPostingList);
+            LOGGER.info("Decompressed posting list size: " + decompressedPostingList.size());
+            Map<Integer,Integer> postingMap = decompressedPostingList.get(0);
+            for (var entry : postingMap.entrySet()) {
+                docIds.add(entry.getKey());
+                freqs.add(entry.getValue());
+                indexDataList.add(new IndexData(docIds,freqs));
+            }
         }
-        indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
+        return indexDataList;
+    }
+    private void addTokenOffset(Long offset,List<Long> tokenOffsets) {
+        tokenOffsets.add(offset);
     }
 
     public void close() throws IOException {
