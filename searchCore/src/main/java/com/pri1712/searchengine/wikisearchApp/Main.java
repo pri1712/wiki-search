@@ -7,7 +7,10 @@ import com.pri1712.searchengine.indexwriter.IndexWriter;
 import com.pri1712.searchengine.indexreader.IndexReader;
 
 import java.io.IOException;
-import java.util.Scanner;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,40 +26,27 @@ public class Main {
     static String indexedFilePath = INDEXED_FILE_PATH;
     static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
     private static String READ_MODE = System.getenv("READ_MODE");
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter path to Wikipedia XML dump file: ");
-        String dataFilePath = scanner.nextLine().trim();
-        scanner.close();
-        long startTime = System.nanoTime();
+    public static void main(String[] args) throws IOException {
+        Map<String,String> parsedArgs = parseArgs(args);
+        String mode = parsedArgs.getOrDefault("mode", "read");
+        String dataPath = parsedArgs.get("data");
+        indexedFilePath = parsedArgs.getOrDefault("index", indexedFilePath);
+        if ("write".equalsIgnoreCase(mode)) {
+            runWritePipeline(dataPath);
+            return;
+        }
+        IndexReader indexReader = openIndexReader(indexedFilePath);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                LOGGER.info("Shutting down, closing index reader...");
+                indexReader.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Failed closing index reader", e);
+            }
+        }));
+        runReadPipeline(indexReader,indexedFilePath);
         //parser
-        if (READ_MODE.equals("false")) {
-            try {
-                Parser parser = new Parser(dataFilePath);
-                parser.parseData();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            //tokenizer
-            try {
-                Tokenizer tokenizer = new Tokenizer();
-                LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
-                tokenizer.tokenizeData(parsedFilePath);
-
-            } catch (RuntimeException e) {
-                LOGGER.log(Level.WARNING, e.getMessage());
-                throw new RuntimeException(e);
-            }
-            //indexer
-            try {
-                IndexWriter indexWriter = new IndexWriter(indexedFilePath);
-                LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
-                indexWriter.indexData(tokenizedFilePath);
-                indexWriter.mergeAllIndexes(indexedFilePath);
-            } catch (RuntimeException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
+        else {
             //load indexes for querying
             try {
                 IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
@@ -82,6 +72,51 @@ public class Main {
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
         LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
 
+    }
+    private static Map<String,String> parseArgs(String[] args) {
+        Map<String,String> parsedArgs = new HashMap<>();
+        for (String a : args) {
+            if (a.startsWith("--")) {
+                String[] parts = a.substring(2).split("=", 2);
+                parsedArgs.put(parts[0], parts.length > 1 ? parts[1] : "");
+            }
+        }
+        return parsedArgs;
+    }
 
+    private static void runWritePipeline(String dataPath) {
+        try {
+            Parser parser = new Parser(dataPath);
+            parser.parseData();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            Tokenizer tokenizer = new Tokenizer();
+            LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
+            tokenizer.tokenizeData(parsedFilePath);
+
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.WARNING, e.getMessage());
+            throw new RuntimeException(e);
+        }
+        try {
+            IndexWriter indexWriter = new IndexWriter(indexedFilePath);
+            LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
+            indexWriter.indexData(tokenizedFilePath);
+            indexWriter.mergeAllIndexes(indexedFilePath);
+        } catch (RuntimeException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void runReadPipeline(IndexReader indexReader, String indexedFilePath) {
+
+    }
+
+    private static IndexReader openIndexReader(String indexPath) throws IOException {
+        Path indexedPath = Paths.get(indexPath);
+        LOGGER.info("Opening index at " + indexedPath.toAbsolutePath());
+        return new IndexReader(indexedPath.toString(),tokenIndexOffsetPath);
     }
 }
