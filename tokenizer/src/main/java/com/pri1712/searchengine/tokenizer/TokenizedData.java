@@ -1,5 +1,7 @@
 package com.pri1712.searchengine.tokenizer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 public class TokenizedData {
@@ -24,7 +26,7 @@ public class TokenizedData {
     public List<String> getTokenizedText() {
         return tokenizedText;
     }
-
+    @JsonIgnore
     public long getLengthTokenizedText() {
         return tokenizedText.size();
     }
@@ -36,7 +38,7 @@ public class TokenizedData {
     public List<String> getTokenizedTitle() {
         return tokenizedTitle;
     }
-
+    @JsonIgnore
     public long getLengthTokenizedTitle() {
         return tokenizedTitle.size();
     }

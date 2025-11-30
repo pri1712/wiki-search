@@ -5,7 +5,10 @@ import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;
 import com.pri1712.searchengine.indexreader.IndexReader;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,12 +43,15 @@ public class Main {
         }
         //tokenizer
         try {
+            Files.createDirectories(Paths.get(docStatsPath));
             Tokenizer tokenizer = new Tokenizer(parsedFilePath,docStatsPath);
             LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
             tokenizer.tokenizeData();
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
+            throw new RuntimeException(e);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         //indexer

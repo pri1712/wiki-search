@@ -32,6 +32,7 @@ public class IndexCompression {
     JsonGenerator gen = mapper.getFactory().createGenerator(counter, JsonEncoding.UTF8);
 
     public void deltaEncode(Path inputFilePath, Path tokenIndexOffsetPath) {
+        LOGGER.log(Level.INFO,"deltaEncode");
         Path outputFilePath = Paths.get(inputFilePath.getParent().toString(),
                 inputFilePath.getFileName().toString().replace(".json.gz", "_delta_encoded.json.gz")
         );
