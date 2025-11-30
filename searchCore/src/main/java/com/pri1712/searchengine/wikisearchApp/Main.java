@@ -1,5 +1,6 @@
 package com.pri1712.searchengine.wikisearchApp;
 
+import com.pri1712.searchengine.indexreader.IndexData;
 import com.pri1712.searchengine.parser.Parser;
 import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;

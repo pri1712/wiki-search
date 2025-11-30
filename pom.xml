@@ -16,6 +16,7 @@
         <module>tokenizer</module>
         <module>indexwriter</module>
         <module>indexreader</module>
+        <module>queryCore</module>
     </modules>
 
     <properties>
