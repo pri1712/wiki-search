@@ -5,6 +5,7 @@ import com.pri1712.searchengine.parser.Parser;
 import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;
 import com.pri1712.searchengine.indexreader.IndexReader;
+import com.pri1712.searchengine.wikiquerying.QueryEngine;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -124,12 +125,8 @@ public class Main {
                     continue;
                 }
                 try {
-                    List<String> words = Arrays.asList(line.split(" "));
-                    List<IndexData> indexData = indexReader.readTokenIndex(words);
-                    for (IndexData data : indexData) {
-                        LOGGER.info("docIds: " + data.getDocIds());
-                        LOGGER.info("frequencies:" + data.getFreqs());
-                    }
+                    QueryEngine queryEngine = new QueryEngine(indexedFilePath,docStatsPath,tokenizedFilePath);
+
                 } catch (Exception e) {
                     LOGGER.log(Level.WARNING, "Query failed", e);
                     System.out.println("Query error: " + e.getMessage());
