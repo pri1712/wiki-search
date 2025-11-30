@@ -1,5 +1,7 @@
 package com.pri1712.searchengine.wikiquerying;
 
+import com.pri1712.searchengine.utils.TextUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +30,7 @@ public class QueryEngine {
 
     public void preprocessQuery(String line) throws IOException {
         List<String> tokens = Arrays.asList(line.split(" "));
-        LOGGER.info("tokens: " + tokens);
+        TextUtils.tokenizeQuery(tokens);
 
     }
 }
