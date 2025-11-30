@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +28,7 @@ public class Main {
     static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
     private static String READ_MODE = System.getenv("READ_MODE");
     public static void main(String[] args) throws IOException {
+        long startTime = System.nanoTime();
         Map<String,String> parsedArgs = parseArgs(args);
         String mode = parsedArgs.getOrDefault("mode", "read");
         String dataPath = parsedArgs.get("data");
@@ -44,29 +46,8 @@ public class Main {
                 LOGGER.log(Level.WARNING, "Failed closing index reader", e);
             }
         }));
+
         runReadPipeline(indexReader,indexedFilePath);
-        //parser
-        else {
-            //load indexes for querying
-            try {
-                IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
-                IndexData indexData = indexReader.readTokenIndex(TEST_TOKEN);
-                LOGGER.fine("Read data from inverted index for token " + TEST_TOKEN);
-                LOGGER.fine("DocIds " + indexData.getDocIds());
-                LOGGER.fine("frequencies " + indexData.getFreqs());
-            } catch (RuntimeException | IOException e) {
-                LOGGER.log(Level.WARNING, e.getMessage());
-                throw new RuntimeException(e);
-            }
-
-            try {
-
-            } catch (RuntimeException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        //loading the indexes for querying.
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
@@ -112,6 +93,41 @@ public class Main {
 
     private static void runReadPipeline(IndexReader indexReader, String indexedFilePath) {
 
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Ready for queries. Type ':reload' to reload index, ':exit' to quit.");
+            while (true) {
+                System.out.print("> ");
+                if (!scanner.hasNextLine()) break;
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
+                if (line.equalsIgnoreCase(":exit")) break;
+
+                if (line.equalsIgnoreCase(":reload")) {
+                    try {
+                        indexReader.close();
+                        indexReader = openIndexReader(indexedFilePath); // reopen new reader instance
+                        System.out.println("Index reloaded.");
+                    } catch (IOException e) {
+                        System.err.println("Reload failed: " + e.getMessage());
+                    }
+                    continue;
+                }
+
+                // run search — do not block reader creation; use executor if heavy
+                try {
+                    IndexData data = indexReader.readTokenIndex(line); // or indexReader.search(...)
+                    System.out.println("DocIds: " + data.getDocIds());
+                    System.out.println("Freqs:  " + data.getFreqs());
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Query failed", e);
+                    System.out.println("Query error: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Read loop terminated unexpectedly", e);
+        } finally {
+            try { indexReader.close(); } catch (IOException ignore) {}
+        }
     }
 
     private static IndexReader openIndexReader(String indexPath) throws IOException {
