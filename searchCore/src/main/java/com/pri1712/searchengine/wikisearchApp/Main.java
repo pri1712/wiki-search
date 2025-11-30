@@ -10,6 +10,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,35 +31,61 @@ public class Main {
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
     static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
-    static String docStatsPath = DOC_STATS_PATH;
-
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter path to Wikipedia XML dump file: ");
-        String dataFilePath = scanner.nextLine().trim();
-        scanner.close();
+    private static String READ_MODE = System.getenv("READ_MODE");
+    public static void main(String[] args) throws IOException {
         long startTime = System.nanoTime();
-        //parser
+        Map<String,String> parsedArgs = parseArgs(args);
+        String mode = parsedArgs.getOrDefault("mode", "read");
+        String dataPath = parsedArgs.get("data");
+        indexedFilePath = parsedArgs.getOrDefault("index", indexedFilePath);
+        if ("write".equalsIgnoreCase(mode)) {
+            runWritePipeline(dataPath);
+            return;
+        }
+        IndexReader indexReader = openIndexReader(indexedFilePath);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                LOGGER.info("Shutting down, closing index reader...");
+                indexReader.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Failed closing index reader", e);
+            }
+        }));
+
+        runReadPipeline(indexReader,indexedFilePath);
+        long endTime = System.nanoTime();
+        long elapsedTime = endTime - startTime;
+        LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
+        LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
+
+    }
+    private static Map<String,String> parseArgs(String[] args) {
+        Map<String,String> parsedArgs = new HashMap<>();
+        for (String a : args) {
+            if (a.startsWith("--")) {
+                String[] parts = a.substring(2).split("=", 2);
+                parsedArgs.put(parts[0], parts.length > 1 ? parts[1] : "");
+            }
+        }
+        return parsedArgs;
+    }
+
+    private static void runWritePipeline(String dataPath) {
         try {
-            Parser parser = new Parser(dataFilePath);
+            Parser parser = new Parser(dataPath);
             parser.parseData();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        //tokenizer
         try {
-            Files.createDirectories(Paths.get(docStatsPath));
-            Tokenizer tokenizer = new Tokenizer(parsedFilePath,docStatsPath);
+            Tokenizer tokenizer = new Tokenizer();
             LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
-            tokenizer.tokenizeData();
+            tokenizer.tokenizeData(parsedFilePath);
 
         } catch (RuntimeException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
-        //indexer
         try {
             IndexWriter indexWriter = new IndexWriter(indexedFilePath);
             LOGGER.info("Indexing Wikipedia XML dump file: " + tokenizedFilePath);
@@ -64,20 +94,50 @@ public class Main {
         } catch (RuntimeException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        //querying is the next step.
-        try {
-            IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
-            indexReader.readTokenIndex(TEST_TOKEN);
-        } catch (RuntimeException | IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            throw new RuntimeException(e);
+    private static void runReadPipeline(IndexReader indexReader, String indexedFilePath) {
+
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Ready for queries. Type ':reload' to reload index, ':exit' to quit.");
+            while (true) {
+                System.out.print("> ");
+                if (!scanner.hasNextLine()) break;
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
+                if (line.equalsIgnoreCase(":exit")) break;
+
+                if (line.equalsIgnoreCase(":reload")) {
+                    try {
+                        indexReader.close();
+                        indexReader = openIndexReader(indexedFilePath); // reopen new reader instance
+                        System.out.println("Index reloaded.");
+                    } catch (IOException e) {
+                        System.err.println("Reload failed: " + e.getMessage());
+                    }
+                    continue;
+                }
+
+                // run search — do not block reader creation; use executor if heavy
+                try {
+                    IndexData data = indexReader.readTokenIndex(line); // or indexReader.search(...)
+                    System.out.println("DocIds: " + data.getDocIds());
+                    System.out.println("Freqs:  " + data.getFreqs());
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Query failed", e);
+                    System.out.println("Query error: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Read loop terminated unexpectedly", e);
+        } finally {
+            try { indexReader.close(); } catch (IOException ignore) {}
         }
-        long endTime = System.nanoTime();
-        long elapsedTime = endTime - startTime;
-        LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);
-        LOGGER.log(Level.INFO,"Memory used: {0} MB", (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024));
+    }
 
-
+    private static IndexReader openIndexReader(String indexPath) throws IOException {
+        Path indexedPath = Paths.get(indexPath);
+        LOGGER.info("Opening index at " + indexedPath.toAbsolutePath());
+        return new IndexReader(indexedPath.toString(),tokenIndexOffsetPath);
     }
 }

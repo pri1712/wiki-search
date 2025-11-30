@@ -82,4 +82,9 @@ public class IndexReader {
         indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
     }
 
+    public void close() throws IOException {
+        LOGGER.info("close");
+    }
+
+
 }
