@@ -31,7 +31,8 @@ public class Main {
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
     static String tokenIndexOffsetPath = TOKEN_INDEX_OFFSET_PATH;
-    private static String READ_MODE = System.getenv("READ_MODE");
+    static String docStatsPath = DOC_STATS_PATH;
+
     public static void main(String[] args) throws IOException {
         long startTime = System.nanoTime();
         Map<String,String> parsedArgs = parseArgs(args);
@@ -78,11 +79,11 @@ public class Main {
             throw new RuntimeException(e);
         }
         try {
-            Tokenizer tokenizer = new Tokenizer();
+            Tokenizer tokenizer = new Tokenizer(parsedFilePath,docStatsPath);
             LOGGER.info("Tokenizing Wikipedia XML dump file: " + parsedFilePath);
-            tokenizer.tokenizeData(parsedFilePath);
+            tokenizer.tokenizeData();
 
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             throw new RuntimeException(e);
         }
