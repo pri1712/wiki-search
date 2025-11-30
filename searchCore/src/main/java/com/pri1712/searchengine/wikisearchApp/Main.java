@@ -1,5 +1,6 @@
 package com.pri1712.searchengine.wikisearchApp;
 
+import com.pri1712.searchengine.indexreader.IndexData;
 import com.pri1712.searchengine.parser.Parser;
 import com.pri1712.searchengine.tokenizer.Tokenizer;
 import com.pri1712.searchengine.indexwriter.IndexWriter;
@@ -22,6 +23,7 @@ public class Main {
     private static final String DOC_STATS_PATH = "data/doc-stats/";
 
     private static final String TEST_TOKEN = "aaaaamaaj";
+
     static String parsedFilePath = PARSED_FILE_PATH;
     static String tokenizedFilePath = TOKENIZED_FILE_PATH;
     static String indexedFilePath = INDEXED_FILE_PATH;
@@ -64,14 +66,12 @@ public class Main {
             throw new RuntimeException(e);
         }
 
-        //querying is the next step.
-        try {
-            IndexReader indexReader = new IndexReader(indexedFilePath,tokenIndexOffsetPath);
-            indexReader.readTokenIndex(TEST_TOKEN);
-        } catch (RuntimeException | IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            throw new RuntimeException(e);
+            } catch (RuntimeException e) {
+                throw new RuntimeException(e);
+            }
         }
+
+        //loading the indexes for querying.
         long endTime = System.nanoTime();
         long elapsedTime = endTime - startTime;
         LOGGER.log(Level.INFO,"Time taken to parse the data : {0} ms",elapsedTime/100000);

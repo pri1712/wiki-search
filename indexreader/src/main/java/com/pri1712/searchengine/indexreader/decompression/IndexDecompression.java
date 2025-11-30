@@ -34,6 +34,8 @@ public class IndexDecompression {
             }
             indexRAF.seek(offset);
             String decodedLine = decodeUTF8(indexRAF);
+            LOGGER.info(decodedLine);
+
             if (decodedLine==null || decodedLine.isEmpty()) {
                 indexList.add(Map.of());
             }
@@ -66,7 +68,8 @@ public class IndexDecompression {
     }
 
     private static Map<Integer,Integer> parsePostingsLine(String line) throws JsonProcessingException {
-        Map<String,Map<String,Integer>> tokenIndexList = mapper.readValue(line, new TypeReference<Map<String, Map<String, Integer>>>() {
+        LOGGER.info("Parsing postings line: " + line);
+        Map<String,Map<String,Integer>> tokenIndexList = mapper.readValue(line, new TypeReference<>() {
         });
         if (tokenIndexList.isEmpty()){
             return Map.of();

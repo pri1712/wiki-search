@@ -11,10 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -28,7 +25,8 @@ public class IndexReader {
     ObjectMapper mapper = new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
             .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
     IndexDecompression indexDecompression = new IndexDecompression();
-
+   List<Integer> docIds = new ArrayList<>();
+   List<Integer> freqs = new ArrayList<>();
     public IndexReader(String indexedFilePath,String indexTokenOffsetFilePath) {
         Path dir = Paths.get(indexedFilePath);
         try {
@@ -58,12 +56,21 @@ public class IndexReader {
             tokenOffsetMap.put(tokenOffsetData.getToken(), tokenOffsetData.getOffset());//storing token to offset in memory in a map.
         }
     }
-    public void readTokenIndex(String token) throws IOException {
+    public IndexData readTokenIndex(String token) throws IOException {
         Long tokenOffset = tokenOffsetMap.get(token);
         List<Long> tokenOffsets = new ArrayList<>();
         tokenOffsets.add(tokenOffset);
         List<Map<Integer,Integer>> decompressedPostingList = indexDecompression.readCompressedIndex(indexedFilePath,tokenOffsets);
+        LOGGER.info("decompressed posting list: " + decompressedPostingList);
         LOGGER.info("Decompressed posting list size: " + decompressedPostingList.size());
+        Map<Integer,Integer> postingMap = decompressedPostingList.get(0);
+        int i = 0;
+        for (var entry : postingMap.entrySet()) {
+            docIds.add(entry.getKey());
+            freqs.add(entry.getValue());
+            i++;
+        }
+        return new IndexData(docIds,freqs);
     }
 
     public void readTokenIndex(List<String> tokens) throws IOException {
