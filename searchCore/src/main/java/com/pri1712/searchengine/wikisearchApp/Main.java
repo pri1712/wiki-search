@@ -111,17 +111,15 @@ public class Main {
                 if (line.equalsIgnoreCase(":reload")) {
                     try {
                         indexReader.close();
-                        indexReader = openIndexReader(indexedFilePath); // reopen new reader instance
+                        indexReader = openIndexReader(indexedFilePath);
                         System.out.println("Index reloaded.");
                     } catch (IOException e) {
                         System.err.println("Reload failed: " + e.getMessage());
                     }
                     continue;
                 }
-
-                // run search — do not block reader creation; use executor if heavy
                 try {
-                    IndexData data = indexReader.readTokenIndex(line); // or indexReader.search(...)
+                    IndexData data = indexReader.readTokenIndex(line);
                     System.out.println("DocIds: " + data.getDocIds());
                     System.out.println("Freqs:  " + data.getFreqs());
                 } catch (Exception e) {
