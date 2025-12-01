@@ -119,7 +119,6 @@ public final class TextUtils {
                 tokenizedQuery.add(stemmed);
             }
         }
-        LOGGER.info(() -> "tokenizedQuery: " + tokenizedQuery);
         return tokenizedQuery;
     }
 }

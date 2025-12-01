@@ -125,8 +125,8 @@ public class Main {
                     continue;
                 }
                 try {
-                    QueryEngine queryEngine = new QueryEngine(indexedFilePath,docStatsPath,tokenizedFilePath);
-                    queryEngine.preprocessQuery(line);
+                    QueryEngine queryEngine = new QueryEngine(indexedFilePath,docStatsPath,tokenIndexOffsetPath);
+                    queryEngine.start(line);
 
                 } catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Query failed", e);
